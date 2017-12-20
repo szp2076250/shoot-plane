@@ -320,9 +320,9 @@ private:
 public:
 	int m_x; int m_y;
 	bool ObjectDead;
-	virtual void init() = 0;
-	virtual void update() = 0;
-	virtual void draw(char(&buffer)[row][col]) = 0;
+	virtual void init() {}
+	virtual void update() {}
+	virtual void draw(char(&buffer)[row][col]){}
 };
 
 class AttackPlane : public Object
@@ -335,8 +335,9 @@ public:
 	void setState(bool state) { ObjectDead = state;}
 	bool CanGeneral(char(&buffer)[row][col], int x, int y)
 	{
-		auto kong = buffer[0][0];
-		if(buffer[x][y]!= kong || buffer[x][y+1] != kong || buffer[x][y-1] != kong)
+		srand(GetTickCount());
+		x = rand()%20;
+		if(buffer[x][y]!= 0 || buffer[x][y+1] != 0 || buffer[x][y-1] != 0)
 			return false;
 		m_x = x; m_y = y;
 		return true;
@@ -412,33 +413,44 @@ public:
 
 class ObjectManager
 {
+private:
 	vector<Object> * p_vo;
-	ObjectManager();
-	static ObjectManager * pInstance;
+	ObjectManager() { p_vo = new vector<Object>(); }
 public:
-	static ObjectManager * getInstance() { if (pInstance == NULL)pInstance = new ObjectManager(); return pInstance; }
+	static ObjectManager * pInstance;
+	static ObjectManager * getInstance();
 	void AddObject(Object * pObject)
 	{
 		p_vo->push_back(*pObject);
 	}
 	void RemoveObject(Object * pObject)
 	{
+		if (p_vo->size()==0)
 		for (auto it = p_vo->begin(); it != p_vo->end(); it++)
 			if (it->ObjectDead)
 				it = p_vo->erase(it);
 	}
 	void DrawObject()
 	{
+		if (p_vo->size() == 0)
 		for (auto it = p_vo->begin(); it != p_vo->end(); it++)
 			it->draw(background);
 	}
 	void UpdateObject()
 	{
+		if (p_vo->size() == 0)
 		for (auto it = p_vo->begin(); it != p_vo->end(); it++)
 			it->update();
 	}
+	~ObjectManager() { if (p_vo != NULL) delete p_vo; }
 };
 ObjectManager * ObjectManager::pInstance = NULL;
+ObjectManager * ObjectManager::getInstance()
+{
+	if (pInstance == NULL)
+		pInstance = new ObjectManager();
+	return pInstance; 
+}
 #define MyManager ObjectManager::getInstance()
 
 ////////////move
