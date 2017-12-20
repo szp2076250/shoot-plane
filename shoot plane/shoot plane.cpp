@@ -266,28 +266,21 @@ public:
 	{
 		vector<bullet>::iterator it;
 
-		//if(!v_bt.empty())
-///////////////////////////////////////////
-		m_plock->Lock();
+
 		for(it=v_bt.begin();it!=v_bt.end();it++)
 		{
 		
 			(*it).Draw_bullet((*it).x,(*it).y);
 		
 		}
-		m_plock->Unlock();
-/////////////////////////////////////////
 	}
 
-	//删除子弹---非常简单的回收机制(=_=!)
+	//删除子弹
 	void del_bullet(void)
 	{
-		vector<bullet>::iterator it;
-		bool ishav = false;
-
 /////////////////////////////////////////////
 		m_plock->Lock();
-		for(it=v_bt.begin();it!=v_bt.end();)
+		for(auto it=v_bt.begin();it!=v_bt.end();)
 		{
 			if((*it).x == 0)
 			{
@@ -306,17 +299,12 @@ public:
 	//移动所有子弹
 	void move_bullet(void)
 	{
-		vector<bullet>::iterator it;
-
-		//if(!v_bt.empty())
-/////////////////////////////////////////////////
-		m_plock->Lock();
-		for(it=v_bt.begin();it!=v_bt.end();it++)
+		//Not need LOCK
+		for(auto it=v_bt.begin();it!=v_bt.end();it++)
 		{
 			if((*it).move());
 		}
-		m_plock->Unlock();
-////////////////////////////////////////////////
+
 	}
 
 	//把之前的飞机删了
