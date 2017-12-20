@@ -340,6 +340,7 @@ public:
 	void init()
 	{
 		//-~-
+		m_x = m_y = 0;
 		ObjectDead = false;
 		bullet_dead = false;
 		m_pbullet = new bullet();
@@ -409,12 +410,12 @@ public:
 class ObjectManager
 {
 private:
-	vector<Object>  m_vo;
+	vector<Object *>  m_vo;
 	ObjectManager() {  }
 public:
 	static ObjectManager * pInstance;
 	static ObjectManager * getInstance();
-	void AddObject(Object  pObject)
+	void AddObject(Object * pObject)
 	{
 		m_vo.push_back(pObject);
 	}
@@ -422,24 +423,25 @@ public:
 	{
 		if (m_vo.size()!=0)
 		for (auto it = m_vo.begin(); it != m_vo.end(); it++)
-			if (it->ObjectDead)
+			if ((*it)->ObjectDead)
 				it = m_vo.erase(it);
 	}
 	void DrawObject()
 	{
 		if (m_vo.size() != 0)
 		for (auto it = m_vo.begin(); it != m_vo.end(); it++)
-			it->draw(background);
+			(*it)->draw(background);
 	}
 	void UpdateObject()
 	{
 		if (m_vo.size() != 0)
 		for (auto it = m_vo.begin(); it != m_vo.end(); it++)
-			it->update();
+			(*it)->update();
 	}
 	~ObjectManager() {  }
 };
 ObjectManager * ObjectManager::pInstance = NULL;
+
 ObjectManager * ObjectManager::getInstance()
 {
 	if (pInstance == NULL)
@@ -458,7 +460,9 @@ DWORD WINAPI move(LPVOID lpParam)
 		ap->draw(background);
 		ap->update();
 
-		MyManager->AddObject(*new AttackPlane());
+
+		Object * p = new AttackPlane();
+		MyManager->AddObject(p);
 		MyManager->DrawObject();
 		MyManager->UpdateObject();
 	}
