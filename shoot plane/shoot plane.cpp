@@ -221,9 +221,9 @@ public:
 			pbu->y = y;
 			//insert into vector.
 /////////////////////////////////////////////
-			m_plock->Lock();;
+			m_plock->Lock();
 			this->v_bt.push_back(*pbu);
-			m_plock->Unlock();;
+			m_plock->Unlock();
 /////////////////////////////////////////////
 			free(pbu);
 		}
@@ -261,7 +261,6 @@ public:
 ////////////////////////////////////////////
 	}
 
-	//移动所有子弹
 	void move_bullet(void)
 	{
 		//Not need LOCK
@@ -272,7 +271,6 @@ public:
 
 	}
 
-	//把之前的飞机删了
 	void Del_Plane(char (&buffer)[row][col])
 	{
 		buffer[x][y]   = ' ';
@@ -291,10 +289,7 @@ public:
 	//Draw Plane
 	void DrawPlane(char  (&buffer)[row][col],int x,int y)
 	{
-		//先删除
 		Del_Plane(buffer);
-
-		//再画+-+
 		buffer[x][y]   = '-';
 		buffer[x][y-1] = '*';
 		buffer[x][y+1] = '*';
@@ -336,7 +331,7 @@ public:
 	bool CanGeneral(char(&buffer)[row][col], int x, int y)
 	{
 		srand(GetTickCount());
-		x = rand()%20;
+		y = rand()%20;
 		if(buffer[x][y]!= 0 || buffer[x][y+1] != 0 || buffer[x][y-1] != 0)
 			return false;
 		m_x = x; m_y = y;
@@ -351,7 +346,7 @@ public:
 		//find
 		for (auto i = 1; i < 30; i++)
 		{
-			if (CanGeneral(background, 2, i))
+			if (CanGeneral(background, 1, i))
 			{
 				return;
 			}
@@ -414,35 +409,35 @@ public:
 class ObjectManager
 {
 private:
-	vector<Object> * p_vo;
-	ObjectManager() { p_vo = new vector<Object>(); }
+	vector<Object>  m_vo;
+	ObjectManager() {  }
 public:
 	static ObjectManager * pInstance;
 	static ObjectManager * getInstance();
-	void AddObject(Object * pObject)
+	void AddObject(Object  pObject)
 	{
-		p_vo->push_back(*pObject);
+		m_vo.push_back(pObject);
 	}
 	void RemoveObject(Object * pObject)
 	{
-		if (p_vo->size()==0)
-		for (auto it = p_vo->begin(); it != p_vo->end(); it++)
+		if (m_vo.size()!=0)
+		for (auto it = m_vo.begin(); it != m_vo.end(); it++)
 			if (it->ObjectDead)
-				it = p_vo->erase(it);
+				it = m_vo.erase(it);
 	}
 	void DrawObject()
 	{
-		if (p_vo->size() == 0)
-		for (auto it = p_vo->begin(); it != p_vo->end(); it++)
+		if (m_vo.size() != 0)
+		for (auto it = m_vo.begin(); it != m_vo.end(); it++)
 			it->draw(background);
 	}
 	void UpdateObject()
 	{
-		if (p_vo->size() == 0)
-		for (auto it = p_vo->begin(); it != p_vo->end(); it++)
+		if (m_vo.size() != 0)
+		for (auto it = m_vo.begin(); it != m_vo.end(); it++)
 			it->update();
 	}
-	~ObjectManager() { if (p_vo != NULL) delete p_vo; }
+	~ObjectManager() {  }
 };
 ObjectManager * ObjectManager::pInstance = NULL;
 ObjectManager * ObjectManager::getInstance()
@@ -462,7 +457,8 @@ DWORD WINAPI move(LPVOID lpParam)
 		Sleep(300);
 		ap->draw(background);
 		ap->update();
-		
+
+		MyManager->AddObject(*new AttackPlane());
 		MyManager->DrawObject();
 		MyManager->UpdateObject();
 	}
