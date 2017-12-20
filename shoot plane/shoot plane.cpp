@@ -147,13 +147,15 @@ public:
 class plane
 {
 public:
-	//position 准确的说是飞机的中心坐标 +=+ 那个=号的坐标
+	//position 中心坐标 +=+ 那个=号的坐标
 	int x;
 	int y;
 	bullet * p_bt;
 	int bullet_count;
 	bool isdead;
 
+	//LOCK
+	CriticalLock * m_plock;
 	//bullet
 	vector<bullet> v_bt;
 
@@ -165,17 +167,15 @@ public:
 		bullet_count = 0;
 		p_bt = NULL;
 		isdead = false;
+		//new Lock
+		m_plock = new CriticalLock();
 	}
 
-	//
 	bool move_plane(int director)
 	{
-
 		//保留原始坐标
 		int old_x = x;
 		int old_y = y;
-
-
 		int sign = 0;
 		switch(director)
 		{
@@ -243,16 +243,16 @@ public:
 			//creat a bullet
 			this->bullet_count++;
 			bullet * pbu = new bullet();
-			//init some bullet date
+	
 	
 			pbu->x = x-1;
 			pbu->y = y;
 			
 			//insert into vector.
 /////////////////////////////////////////////
-			::EnterCriticalSection(&cs);
+			m_plock->Lock();;
 			this->v_bt.push_back(*pbu);
-			LeaveCriticalSection(&cs);
+			m_plock->Unlock();;
 /////////////////////////////////////////////
 			
 			free(pbu);
@@ -268,14 +268,14 @@ public:
 
 		//if(!v_bt.empty())
 ///////////////////////////////////////////
-		EnterCriticalSection(&cs);
+		m_plock->Lock();
 		for(it=v_bt.begin();it!=v_bt.end();it++)
 		{
 		
 			(*it).Draw_bullet((*it).x,(*it).y);
 		
 		}
-		LeaveCriticalSection(&cs);
+		m_plock->Unlock();
 /////////////////////////////////////////
 	}
 
@@ -286,7 +286,7 @@ public:
 		bool ishav = false;
 
 /////////////////////////////////////////////
-		EnterCriticalSection(&cs);
+		m_plock->Lock();
 		for(it=v_bt.begin();it!=v_bt.end();)
 		{
 			if((*it).x == 0)
@@ -299,7 +299,7 @@ public:
 				it++;
 			}
 		}
-		LeaveCriticalSection(&cs);
+		m_plock->Unlock();
 ////////////////////////////////////////////
 	}
 
@@ -310,12 +310,12 @@ public:
 
 		//if(!v_bt.empty())
 /////////////////////////////////////////////////
-		EnterCriticalSection(&cs);
+		m_plock->Lock();
 		for(it=v_bt.begin();it!=v_bt.end();it++)
 		{
 			if((*it).move());
 		}
-		LeaveCriticalSection(&cs);
+		m_plock->Unlock();
 ////////////////////////////////////////////////
 	}
 
@@ -627,8 +627,11 @@ DWORD WINAPI move(LPVOID lpParam)
 void CALLBACK TimerProc(UINT uTimerID,UINT uMsg,DWORD_PTR dwUser,DWORD_PTR dw1,DWORD_PTR dw2)
 {
 	
-	auto * p = (plane *)LOWORD(dwUser);
-	int a;
+	auto * p = (plane *)dwUser;
+
+	p->move_bullet();
+	p->Draw_bullet();
+	p->del_bullet();
 
 
 	/*
@@ -679,7 +682,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	CloseHandle(move_bullet);
 
 
-	timeSetEvent(300,1,(LPTIMECALLBACK)TimerProc,MAKELPARAM(pa,p),TIME_PERIODIC);
+	timeSetEvent(300,1,(LPTIMECALLBACK)TimerProc,(DWORD_PTR)p,TIME_PERIODIC);
 
 	//pa->DrawPlane();
 
@@ -712,8 +715,6 @@ int _tmain(int argc, _TCHAR* argv[])
 			p->shoot();
 		}
 			
-		
-
 
 		Sleep(50);
 		system("cls");
