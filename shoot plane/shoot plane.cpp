@@ -36,6 +36,72 @@ char background[row][col];
 
 CRITICAL_SECTION cs;
 
+class Object
+{
+private:
+public:
+	int m_x; int m_y;
+	bool ObjectDead;
+	virtual void init() {}
+	virtual void update() {}
+	virtual void draw(char(&buffer)[row][col]) {}
+};
+
+class ObjectManager
+{
+private:
+	vector<Object *>  m_vo;
+	ObjectManager() {  }
+public:
+	static ObjectManager * pInstance;
+	static ObjectManager * getInstance();
+	double Calc_near_Lu(int x, int y)
+	{
+		double near_most = 999999999999;
+		for (auto it = m_vo.begin(); it != m_vo.end(); it++)
+		{
+			auto juli = sqrt(pow(abs((*it)->m_x - x), 2) + pow(abs((*it)->m_y - y), 2));
+			if (juli < near_most)
+			{
+				near_most = juli;
+			}
+		}
+		return near_most;
+	}
+	void AddObject(Object * pObject)
+	{
+		m_vo.push_back(pObject);
+	}
+	void RemoveObject(Object * pObject)
+	{
+			for (auto it = m_vo.begin(); it != m_vo.end(); it++)
+				if ((*it)->ObjectDead)
+					it = m_vo.erase(it);
+	}
+	void DrawObject()
+	{
+			for (auto it = m_vo.begin(); it != m_vo.end(); it++)
+				(*it)->draw(background);
+	}
+	void UpdateObject()
+	{
+			for (auto it = m_vo.begin(); it != m_vo.end(); it++)
+				(*it)->update();
+	}
+	~ObjectManager() {  }
+};
+ObjectManager * ObjectManager::pInstance = NULL;
+
+ObjectManager * ObjectManager::getInstance()
+{
+	if (pInstance == NULL)
+		pInstance = new ObjectManager();
+	return pInstance;
+}
+
+
+
+
 //Lock
 class CriticalLock
 {
@@ -309,31 +375,60 @@ public:
 
 };
 
-class Object
-{
-private:
-public:
-	int m_x; int m_y;
-	bool ObjectDead;
-	virtual void init() {}
-	virtual void update() {}
-	virtual void draw(char(&buffer)[row][col]){}
-};
+
 
 class AttackPlane : public Object
 {
 private:
 	bullet * m_pbullet;
 	bool bullet_dead;
+	char * kind ="-~-";
+	char kind1[4] = "-=-";
+	char kind2[4] = "&=&";
+	char kind3[4] = "%=%";
+	char kind4[4] = "$-$";
+	char kind5[4] = "-~-";
+	char kind6[4] = "@-@";
 public:
 	bool getState() { return ObjectDead; }
 	void setState(bool state) { ObjectDead = state;}
 	bool CanGeneral(char(&buffer)[row][col], int x, int y)
 	{
 		srand(GetTickCount());
-		y = rand()%20;
-		if(buffer[x][y]!= 0 || buffer[x][y+1] != 0 || buffer[x][y-1] != 0)
+		y = rand()%25;
+
+		auto varis = rand() % 7;
+	
+		
+		/*if(buffer[x][y]!= 0 || buffer[x][y+1] != 0 || buffer[x][y-1] != 0)
+			return false;*/
+		if (ObjectManager::getInstance()->Calc_near_Lu(m_x, m_y) < 2.0)
 			return false;
+
+		switch (varis)
+		{
+		case 1:
+			kind = kind1;
+			break;
+		case 2:
+			kind = kind2;
+			break;
+		case 3:
+			kind = kind3;
+			break;
+		case 4:
+			kind = kind4;
+			break;
+		case 5:
+			kind = kind5;
+			break;
+		case 6:
+			kind = kind6;
+			break;
+		default:
+			break;
+		}
+	
 		m_x = x; m_y = y;
 		return true;
 	}
@@ -345,12 +440,9 @@ public:
 		bullet_dead = false;
 		m_pbullet = new bullet();
 		//find
-		for (auto i = 1; i < 30; i++)
+		if (CanGeneral(background, 1, 0))
 		{
-			if (CanGeneral(background, 1, i))
-			{
-				return;
-			}
+			return;
 		}
 		//NO Attack plane can Construct 
 		//สำฮช dead
@@ -396,9 +488,9 @@ public:
 		//clear old
 		Clear(background,m_x-1,m_y);
 		//draw plane
-		buffer[m_x][m_y] = '~';
-		buffer[m_x][m_y-1] = '-';
-		buffer[m_x][m_y+1] = '-';
+		buffer[m_x][m_y] = kind[1];
+		buffer[m_x][m_y-1] = kind[0];
+		buffer[m_x][m_y+1] = kind[2];
 		//draw bullet
 		if(!bullet_dead)
 		m_pbullet->Draw_bullet(m_x+1,m_y,true);
@@ -407,48 +499,8 @@ public:
 	~AttackPlane() { delete m_pbullet; }
 };
 
-class ObjectManager
-{
-private:
-	vector<Object *>  m_vo;
-	ObjectManager() {  }
-public:
-	static ObjectManager * pInstance;
-	static ObjectManager * getInstance();
-	void AddObject(Object * pObject)
-	{
-		m_vo.push_back(pObject);
-	}
-	void RemoveObject(Object * pObject)
-	{
-		if (m_vo.size()!=0)
-		for (auto it = m_vo.begin(); it != m_vo.end(); it++)
-			if ((*it)->ObjectDead)
-				it = m_vo.erase(it);
-	}
-	void DrawObject()
-	{
-		if (m_vo.size() != 0)
-		for (auto it = m_vo.begin(); it != m_vo.end(); it++)
-			(*it)->draw(background);
-	}
-	void UpdateObject()
-	{
-		if (m_vo.size() != 0)
-		for (auto it = m_vo.begin(); it != m_vo.end(); it++)
-			(*it)->update();
-	}
-	~ObjectManager() {  }
-};
-ObjectManager * ObjectManager::pInstance = NULL;
 
-ObjectManager * ObjectManager::getInstance()
-{
-	if (pInstance == NULL)
-		pInstance = new ObjectManager();
-	return pInstance; 
-}
-#define MyManager ObjectManager::getInstance()
+
 
 ////////////move
 DWORD WINAPI move(LPVOID lpParam)
@@ -460,11 +512,10 @@ DWORD WINAPI move(LPVOID lpParam)
 		ap->draw(background);
 		ap->update();
 
-
 		Object * p = new AttackPlane();
-		MyManager->AddObject(p);
-		MyManager->DrawObject();
-		MyManager->UpdateObject();
+		ObjectManager::getInstance()->AddObject(p);
+		ObjectManager::getInstance()->DrawObject();
+		ObjectManager::getInstance()->UpdateObject();
 	}
 }
 
