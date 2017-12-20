@@ -319,6 +319,7 @@ class Object
 private:
 public:
 	int m_x; int m_y;
+	bool ObjectDead;
 	virtual void init() = 0;
 	virtual void update() = 0;
 	virtual void draw(char(&buffer)[row][col]) = 0;
@@ -328,11 +329,10 @@ class AttackPlane : public Object
 {
 private:
 	bullet * m_pbullet;
-	bool dead;
 	bool bullet_dead;
 public:
-	bool getState() { return dead; }
-	void setState(bool state) { dead = state;}
+	bool getState() { return ObjectDead; }
+	void setState(bool state) { ObjectDead = state;}
 	bool CanGeneral(char(&buffer)[row][col], int x, int y)
 	{
 		auto kong = buffer[0][0];
@@ -344,7 +344,7 @@ public:
 	void init()
 	{
 		//-~-
-		dead = false;
+		ObjectDead = false;
 		bullet_dead = false;
 		m_pbullet = new bullet();
 		//find
@@ -357,11 +357,11 @@ public:
 		}
 		//NO Attack plane can Construct 
 		//视为 dead
-		dead = true;
+		ObjectDead = true;
 	}
 	void update()
 	{
-		if (dead) return;
+		if (ObjectDead) return;
 		if (!bullet_dead && m_pbullet->isdead())
 		{
 			bullet_dead = true;
@@ -376,7 +376,7 @@ public:
 		auto temp = m_x;
 		if (m_x> 30 || m_x< 0 || m_y<0 || m_y>20)
 		{
-			dead = true;
+			ObjectDead = true;
 			return;
 		}
 		m_x++;
@@ -390,7 +390,7 @@ public:
 			buffer[x][y + 1] = ' ';
 			buffer[x][y - 1] = ' ';
 		};
-		if (dead)
+		if (ObjectDead)
 		{
 			Clear(background, m_x - 1, m_y);
 			return;
@@ -410,6 +410,37 @@ public:
 	~AttackPlane() { delete m_pbullet; }
 };
 
+class ObjectManager
+{
+	vector<Object> * p_vo;
+	ObjectManager();
+	static ObjectManager * pInstance;
+public:
+	static ObjectManager * getInstance() { if (pInstance == NULL)pInstance = new ObjectManager(); return pInstance; }
+	void AddObject(Object * pObject)
+	{
+		p_vo->push_back(*pObject);
+	}
+	void RemoveObject(Object * pObject)
+	{
+		for (auto it = p_vo->begin(); it != p_vo->end(); it++)
+			if (it->ObjectDead)
+				it = p_vo->erase(it);
+	}
+	void DrawObject()
+	{
+		for (auto it = p_vo->begin(); it != p_vo->end(); it++)
+			it->draw(background);
+	}
+	void UpdateObject()
+	{
+		for (auto it = p_vo->begin(); it != p_vo->end(); it++)
+			it->update();
+	}
+};
+ObjectManager * ObjectManager::pInstance = NULL;
+#define MyManager ObjectManager::getInstance()
+
 ////////////move
 DWORD WINAPI move(LPVOID lpParam)
 {
@@ -419,6 +450,9 @@ DWORD WINAPI move(LPVOID lpParam)
 		Sleep(300);
 		ap->draw(background);
 		ap->update();
+		
+		MyManager->DrawObject();
+		MyManager->UpdateObject();
 	}
 }
 
@@ -428,7 +462,6 @@ void CALLBACK TimerProc(UINT uTimerID, UINT uMsg, DWORD_PTR dwUser, DWORD_PTR dw
 	p->move_bullet();
 	p->Draw_bullet();
 	p->del_bullet();
-
 }
 
 namespace Manager {
@@ -552,8 +585,6 @@ void Game_Loop()
 		Manager::Draw_Background(background);
 		Manager::SetPosition(500, 500);
 	}
-
-
 }
 
 //游戏结束
