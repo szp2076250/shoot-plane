@@ -143,8 +143,6 @@ public:
 	CriticalLock * m_plock;
 	//bullet
 	vector<bullet> v_bt;
-
-
 	plane(int x=20,int y=15)
 	{
 		this->x = x;
@@ -155,9 +153,7 @@ public:
 		//new Lock
 		m_plock = new CriticalLock();
 	}
-
 	~plane() { x = y = 0; if (!p_bt)free(p_bt); }
-
 	bool move_plane(int director)
 	{
 		//保留原始坐标
@@ -195,7 +191,6 @@ public:
 				}
 			break;
 		}
-
 		//检查是否越界
 		if(is_overstep(this->x,this->y))
 		{
@@ -210,34 +205,26 @@ public:
 		 this->Del_Plane(background,old_x,old_y);
 		 old_x = old_y = 0;
 		}
-
-
 		return sign;
 	}
 
 	bool shoot(bool is_attacker=false)
 	{
-		
 		if(!is_attacker)
 		{
-			if((this->y)-1<1)
+			if((this->y)-1<0)
 				return false;
-
 			//creat a bullet
 			this->bullet_count++;
 			bullet * pbu = new bullet();
-	
-	
 			pbu->x = x-1;
 			pbu->y = y;
-			
 			//insert into vector.
 /////////////////////////////////////////////
 			m_plock->Lock();;
 			this->v_bt.push_back(*pbu);
 			m_plock->Unlock();;
 /////////////////////////////////////////////
-			
 			free(pbu);
 		}
 
@@ -345,6 +332,7 @@ private:
 	bool bullet_dead;
 public:
 	bool getState() { return dead; }
+	void setState(bool state) { dead = state;}
 	bool CanGeneral(char(&buffer)[row][col], int x, int y)
 	{
 		auto kong = buffer[0][0];
@@ -373,9 +361,7 @@ public:
 	}
 	void update()
 	{
-		
 		if (dead) return;
-
 		if (!bullet_dead && m_pbullet->isdead())
 		{
 			bullet_dead = true;
@@ -386,8 +372,6 @@ public:
 		{
 			m_pbullet->move(true);
 		}
-
-
 		//move plane
 		auto temp = m_x;
 		if (m_x> 30 || m_x< 0 || m_y<0 || m_y>20)
@@ -399,17 +383,21 @@ public:
 	}
 	void draw(char(&buffer)[row][col])
 	{
-		if (dead) return;
-		auto Clear = [&](char(&buffer)[row][col])
+		auto Clear = [&](char(&buffer)[row][col],UINT x,UINT y)
 		{
-			if (m_x - 1 < 0) return;
-			buffer[m_x-1][m_y] = ' ';
-			buffer[m_x-1][m_y + 1] = ' ';
-			buffer[m_x-1][m_y - 1] = ' ';
+			if (x - 1 < 0) return;
+			buffer[x][y] = ' ';
+			buffer[x][y + 1] = ' ';
+			buffer[x][y - 1] = ' ';
 		};
-		//clear old
+		if (dead)
+		{
+			Clear(background, m_x - 1, m_y);
+			return;
+		}
 
-		Clear(background);
+		//clear old
+		Clear(background,m_x-1,m_y);
 		//draw plane
 		buffer[m_x][m_y] = '~';
 		buffer[m_x][m_y-1] = '-';
@@ -421,8 +409,6 @@ public:
 	AttackPlane() { init(); }
 	~AttackPlane() { delete m_pbullet; }
 };
-
-
 
 ////////////move
 DWORD WINAPI move(LPVOID lpParam)
@@ -530,8 +516,6 @@ void Init_Game()
 	HANDLE move_bullet = CreateThread(NULL, 0, move, ap, 0, NULL);
 	CloseHandle(move_bullet);
 	timeSetEvent(300, 1, (LPTIMECALLBACK)TimerProc, (DWORD_PTR)actor, TIME_PERIODIC);
-	
-
 }
 
 void Game_Loop()
