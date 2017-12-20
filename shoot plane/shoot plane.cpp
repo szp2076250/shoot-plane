@@ -337,6 +337,11 @@ public:
 		for(auto it=v_bt.begin();it!=v_bt.end();it++)
 		{
 			if((*it).move());
+			Object * p=NULL;
+			if (ObjectManager::getInstance()->Calc_near_Lu((*it).x, (*it).y, p) <= 1)
+			{
+				p->ObjectDead = true;
+			}
 		}
 
 	}
