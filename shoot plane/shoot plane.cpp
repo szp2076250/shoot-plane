@@ -395,15 +395,15 @@ public:
 	bool CanGeneral(char(&buffer)[row][col], int x, int y)
 	{
 		srand(GetTickCount());
-		y = rand()%25;
+		y = rand()%30;
 
 		auto varis = rand() % 7;
 	
 		
 		/*if(buffer[x][y]!= 0 || buffer[x][y+1] != 0 || buffer[x][y-1] != 0)
 			return false;*/
-		if (ObjectManager::getInstance()->Calc_near_Lu(m_x, m_y) < 2.0)
-			return false;
+		/*if (ObjectManager::getInstance()->Calc_near_Lu(m_x, m_y) < 2.0)
+				return false;*/
 
 		switch (varis)
 		{
@@ -463,7 +463,7 @@ public:
 		}
 		//move plane
 		auto temp = m_x;
-		if (m_x> 30 || m_x< 0 || m_y<0 || m_y>20)
+		if (m_x> 30 || m_x< 0 || m_y<0 || m_y>30)
 		{
 			ObjectDead = true;
 			return;
