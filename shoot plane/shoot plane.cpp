@@ -373,12 +373,7 @@ public:
 	}
 	void update()
 	{
-		auto Clear = [&](char(&buffer)[row][col])
-		{
-			buffer[m_x][m_y] = ' ';
-			buffer[m_x][m_y+1] = ' ';
-			buffer[m_x][m_y-1] = ' ';
-		};
+		
 		if (dead) return;
 
 		if (!bullet_dead && m_pbullet->isdead())
@@ -392,8 +387,7 @@ public:
 			m_pbullet->move(true);
 		}
 
-		//clear old
-		//Clear(background);
+
 		//move plane
 		auto temp = m_x;
 		if (m_x> 30 || m_x< 0 || m_y<0 || m_y>20)
@@ -406,6 +400,16 @@ public:
 	void draw(char(&buffer)[row][col])
 	{
 		if (dead) return;
+		auto Clear = [&](char(&buffer)[row][col])
+		{
+			if (m_x - 1 < 0) return;
+			buffer[m_x-1][m_y] = ' ';
+			buffer[m_x-1][m_y + 1] = ' ';
+			buffer[m_x-1][m_y - 1] = ' ';
+		};
+		//clear old
+
+		Clear(background);
 		//draw plane
 		buffer[m_x][m_y] = '~';
 		buffer[m_x][m_y-1] = '-';
