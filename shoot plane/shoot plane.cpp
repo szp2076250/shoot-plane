@@ -1,9 +1,9 @@
-// a very simple test
+// a very simple test by pSong
 // last modify still have lots of bugs. 
 // name: shoot plane(da fei ji)
 
 #include "stdafx.h"
-/*使用printf比使用cout<<要快=_=*/
+
 ////////////////////////
 #include <stdio.h>
 ///////////////////////
@@ -13,7 +13,6 @@
 using namespace std;
 
 # pragma comment(lib,"winmm.lib")
-
 
 bool game_loop = true;
 int  score     = 0;
@@ -49,8 +48,7 @@ public:
 	~CriticalLock() { DeleteCriticalSection(&mLock); }
 };
 
-
-//检查是否越界
+//是否越界
 bool is_overstep(int x,int y)
 {
 	if(x>(row-1) || x<0 || y>(col-2) || y<0)
@@ -60,7 +58,6 @@ bool is_overstep(int x,int y)
 
 	return false;
 }
-
 //子弹
 class bullet
 {
@@ -159,7 +156,7 @@ public:
 	//bullet
 	vector<bullet> v_bt;
 
-	//default 
+
 	plane(int x=20,int y=15)
 	{
 		this->x = x;
@@ -170,6 +167,8 @@ public:
 		//new Lock
 		m_plock = new CriticalLock();
 	}
+
+	~plane() { x = y = 0; if (!p_bt)free(p_bt); }
 
 	bool move_plane(int director)
 	{
@@ -261,21 +260,16 @@ public:
 		return true;
 	}
 
-	//画子弹
+	//draw bullet
 	void Draw_bullet(void)
 	{
-		vector<bullet>::iterator it;
-
-
-		for(it=v_bt.begin();it!=v_bt.end();it++)
+		for(auto it=v_bt.begin();it!=v_bt.end();it++)
 		{
-		
 			(*it).Draw_bullet((*it).x,(*it).y);
-		
 		}
 	}
 
-	//删除子弹
+	//del bullet
 	void del_bullet(void)
 	{
 /////////////////////////////////////////////
@@ -310,7 +304,6 @@ public:
 	//把之前的飞机删了
 	void Del_Plane(char (&buffer)[row][col])
 	{
-		
 		buffer[x][y]   = ' ';
 		buffer[x][y-1] = ' ';
 		buffer[x][y+1] = ' ';
@@ -324,7 +317,6 @@ public:
 		buffer[a][b+1] = ' ';
 	}
 
-	
 	//Draw Plane
 	void DrawPlane(char  (&buffer)[row][col],int x,int y)
 	{
@@ -336,32 +328,19 @@ public:
 		buffer[x][y-1] = '*';
 		buffer[x][y+1] = '*';
 	}
-
-	//初始化
+	//init
 	void Init_Plane(char (&buffer)[row][col])
 	{
 		buffer[x][y]   = '-';
 		buffer[x][y-1] = '*';
 		buffer[x][y+1] = '*';
 	}
-	
-
 	//Update 
 	void Update_Plane()
 	{
 		this->DrawPlane(background,this->x,this->y);
 	}
-
-	//析构
-	~plane()
-	{
-		x = 0;
-		y = 0;
-
-		if(p_bt!=NULL)
-		free(p_bt);
-	}
-
+	
 
 };
 
@@ -460,7 +439,6 @@ class AttackPlane
 			return false;
 
 		}
-
 		//plane collision
 		bool plane_collision(int x,int y)
 		{
@@ -483,7 +461,6 @@ class AttackPlane
 
 			return false;
 		}
-
 		//collision
 		bool collision(int x,int y)
 		{
@@ -514,13 +491,11 @@ class AttackPlane
 
 					it++;
 				}*/
-
 				background[x][y]   = '-';
 				background[x][y-1] = '@';
 				background[x][y+1] = '@';
 			}
 		}
-
 
 		~AttackPlane()
 		{
@@ -530,6 +505,9 @@ class AttackPlane
 		
 	
 };
+
+namespace Manager {
+void CleanScreen() { system("cls"); }
 
 // play error message and end the gameloop
 void Error(const char * _str)
@@ -559,7 +537,6 @@ void Draw_Background(char (&buffer)[row][col])
 		for(int j=0;j<col;j++)
 		{
 			printf("%c",buffer[i][j]);
-			//printf("\n");
 		}
 		printf("\n");
 	}
@@ -594,90 +571,59 @@ void Game_Over()
 {
 	KillTimer(NULL,1);
 	//清空
-	::Zero_Background(background);
+	Zero_Background(background);
 	Error("游戏结束！");
 	system("pause");
 
 }
+};
 
-////////////////////////////////////////////move
+////////////move
 DWORD WINAPI move(LPVOID lpParam)
 {
 	plane * p = (plane *)lpParam;
-
 	while(1)
 	{
 	 	Sleep(300);
-
 	}
 }
 
 void CALLBACK TimerProc(UINT uTimerID,UINT uMsg,DWORD_PTR dwUser,DWORD_PTR dw1,DWORD_PTR dw2)
 {
-	
 	auto * p = (plane *)dwUser;
-
 	p->move_bullet();
 	p->Draw_bullet();
 	p->del_bullet();
-
-
-	/*
-
-	p->move_bullet();
-	p->del_bullet();
-
-	pa->Create();
-	if(pa->collision(p->x,p->y))
-	{
-		Game_Over();
-	}
-	pa->ap_move();*/
-	
 
 }
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-
+	
 	plane * p = new plane();
 	AttackPlane * pa = new AttackPlane();
 
-
 	HWND cHwnd = GetConsoleWindow();
 	if(cHwnd==NULL) 
-		Error("can not find the window!");
+		Manager::Error("can not find the window!");
 
-	change_window_size(cHwnd,(SYSTEM_WIDTH-CONSOLE_WIDTH)/2,(SYSTEM_HEIGHT-CONSOLE_HEIGHT)/2,1024,768);
-	system("cls");
-
-	change_window_size(cHwnd,(SYSTEM_WIDTH-CONSOLE_WIDTH)/2,(SYSTEM_HEIGHT-CONSOLE_HEIGHT)/2,290,400);//21*31
+	Manager::CleanScreen();
+	Manager::change_window_size(cHwnd,(SYSTEM_WIDTH-CONSOLE_WIDTH)/2,(SYSTEM_HEIGHT-CONSOLE_HEIGHT)/2,290,400);//21*31
 	SetConsoleTitle(L"shoot plane!");
-	Zero_Background(background);
+	Manager::Zero_Background(background);
 
 	p->Init_Plane(background);
-	Draw_Background(background);
+	Manager::Draw_Background(background);
 
-	//创建线程
-	HANDLE move_bullet = CreateThread(
-						NULL,
-						0,
-						move,  //线程函数
-						p,
-						0, // 立即激活该线程
-						NULL);
+	//Thread Move
+	HANDLE move_bullet = CreateThread(NULL,0,move,  p,0, NULL);
 
 	CloseHandle(move_bullet);
-
-
 	timeSetEvent(300,1,(LPTIMECALLBACK)TimerProc,(DWORD_PTR)p,TIME_PERIODIC);
-
-	//pa->DrawPlane();
-
 
 	while(game_loop)
 	{
-		//函数内容
+	
 		if(KEYDOWN(KEY_A))
 		{
 			p->move_plane(KEY_A);
@@ -702,14 +648,12 @@ int _tmain(int argc, _TCHAR* argv[])
 		{
 			p->shoot();
 		}
-			
 
 		Sleep(50);
-		system("cls");
-		Draw_Background(background);
-		SetPosition(500,500);
+		Manager::CleanScreen();
+		Manager::Draw_Background(background);
+		Manager::SetPosition(500,500);
 	}
-
 
 	system("pause");
 	return 0;
