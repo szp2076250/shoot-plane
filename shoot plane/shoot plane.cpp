@@ -55,15 +55,20 @@ private:
 public:
 	static ObjectManager * pInstance;
 	static ObjectManager * getInstance();
-	double Calc_near_Lu(int x, int y)
+	// [out] nearest
+	double Calc_near_Lu(int x, int y,Object * pnearest)
 	{
+		//ÎÞÇîÔ¶
+		Object * pob;
 		double near_most = 999999999999;
+		if (m_vo.size() == 0) return near_most;
 		for (auto it = m_vo.begin(); it != m_vo.end(); it++)
 		{
 			auto juli = sqrt(pow(abs((*it)->m_x - x), 2) + pow(abs((*it)->m_y - y), 2));
 			if (juli < near_most)
 			{
 				near_most = juli;
+				pob = (*it);
 			}
 		}
 		return near_most;
@@ -130,8 +135,14 @@ class bullet
 public:
 	int x;
 	int y;
+	bool dead;
+	void SetState(bool state) { dead = state; }
+	bool GetState(void) { return dead; }
+
+	bullet() { dead = false; }
 	void Draw_bullet(int x, int y, bool is_attacker = false)
 	{
+		if (dead) return;
 		if (!is_attacker)
 		{
 			if (x >= 1)
@@ -150,6 +161,7 @@ public:
 	//move bullet
 	bool move(bool is_attacker = false)
 	{
+		if (dead) return false;
 		if(!is_attacker)
 		{
 			if(x>=1)
@@ -177,18 +189,10 @@ public:
 				background[x][y] = ' ';
 			}
 		}
+		if (y > 30) dead = true;
 		return false;
 	}
-	//delete
-	bool isdead()
-	{
-		if(y<=31 && y>=1)
-		{
-			return false;
-		}
-		background[x][y] = ' ';
-		return true;
-	}
+
 	void Remove()
 	{
 		background[x][y] = ' ';
@@ -313,7 +317,7 @@ public:
 		m_plock->Lock();
 		for(auto it=v_bt.begin();it!=v_bt.end();)
 		{
-			if((*it).x == 0)
+			if((*it).x == 0||(*it).GetState())
 			{
 				(*it).Remove();
 				it = v_bt.erase(it);
@@ -396,10 +400,8 @@ public:
 	{
 		srand(GetTickCount());
 		y = rand()%30;
-
 		auto varis = rand() % 7;
-	
-		
+
 		/*if(buffer[x][y]!= 0 || buffer[x][y+1] != 0 || buffer[x][y-1] != 0)
 			return false;*/
 		/*if (ObjectManager::getInstance()->Calc_near_Lu(m_x, m_y) < 2.0)
@@ -439,6 +441,7 @@ public:
 		ObjectDead = false;
 		bullet_dead = false;
 		m_pbullet = new bullet();
+		m_pbullet->SetState(true);
 		//find
 		if (CanGeneral(background, 1, 0))
 		{
@@ -450,8 +453,9 @@ public:
 	}
 	void update()
 	{
+		bullet_dead = m_pbullet->GetState();
 		if (ObjectDead) return;
-		if (!bullet_dead && m_pbullet->isdead())
+		if (!bullet_dead && m_pbullet->GetState())
 		{
 			bullet_dead = true;
 			delete(m_pbullet);
