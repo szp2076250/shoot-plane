@@ -14,7 +14,7 @@ using namespace std;
 
 # pragma comment(lib,"winmm.lib")
 
-bool game_loop = true;
+
 int  score     = 0;
 # define row 21  //行
 # define row_ 123 
@@ -506,7 +506,32 @@ class AttackPlane
 	
 };
 
+////////////move
+DWORD WINAPI move(LPVOID lpParam)
+{
+	plane * p = (plane *)lpParam;
+	while (1)
+	{
+		Sleep(300);
+	}
+}
+
+void CALLBACK TimerProc(UINT uTimerID, UINT uMsg, DWORD_PTR dwUser, DWORD_PTR dw1, DWORD_PTR dw2)
+{
+	auto * p = (plane *)dwUser;
+	p->move_bullet();
+	p->Draw_bullet();
+	p->del_bullet();
+
+}
+
 namespace Manager {
+
+	//Actor
+	plane * actor = NULL;
+	//condition
+	bool game_loop = false;
+
 void CleanScreen() { system("cls"); }
 
 // play error message and end the gameloop
@@ -563,7 +588,63 @@ void SetPosition(int x,int y)
 
 void Init_Game()
 {
-	MessageBoxA(NULL,"ASDW 控制方向 \n空格键开火!\nBug 巨多\n高能预警！","\'温馨\'提示=_=",MB_OK);
+	//MessageBoxA(NULL,"ASDW 控制方向 \n空格键开火!\nBug 巨多\n高能预警！","\'温馨\'提示=_=",MB_OK);
+	//Create a Actor
+	actor = new plane();
+	game_loop = true;
+	HWND cHwnd = GetConsoleWindow();
+	if (cHwnd == NULL)
+		Error("can not find the window!");
+
+	Manager::CleanScreen();
+	Manager::change_window_size(cHwnd, (SYSTEM_WIDTH - CONSOLE_WIDTH) / 2, (SYSTEM_HEIGHT - CONSOLE_HEIGHT) / 2, 290, 400);//21*31
+	SetConsoleTitle(L"shoot plane!");
+	Manager::Zero_Background(background);
+	Manager::Draw_Background(background);
+
+	actor->Init_Plane(background);
+	//Thread Move
+	HANDLE move_bullet = CreateThread(NULL, 0, move, actor, 0, NULL);
+	CloseHandle(move_bullet);
+	timeSetEvent(300, 1, (LPTIMECALLBACK)TimerProc, (DWORD_PTR)actor, TIME_PERIODIC);
+}
+
+void Game_Loop()
+{
+	if (!actor) game_loop = false;
+	while (game_loop)
+	{
+		if (KEYDOWN(KEY_A))
+		{
+			actor->move_plane(KEY_A);
+			actor->Update_Plane();
+		}
+		else if (KEYDOWN(KEY_D))
+		{
+			actor->move_plane(KEY_D);
+			actor->Update_Plane();
+		}
+		else if (KEYDOWN(KEY_S))
+		{
+			actor->move_plane(KEY_S);
+			actor->Update_Plane();
+		}
+		else if (KEYDOWN(KEY_W))
+		{
+			actor->move_plane(KEY_W);
+			actor->Update_Plane();
+		}
+		else if (KEYDOWN(VK_SPACE))
+		{
+			actor->shoot();
+		}
+		Sleep(50);
+		Manager::CleanScreen();
+		Manager::Draw_Background(background);
+		Manager::SetPosition(500, 500);
+	}
+
+
 }
 
 //游戏结束
@@ -578,84 +659,13 @@ void Game_Over()
 }
 };
 
-////////////move
-DWORD WINAPI move(LPVOID lpParam)
-{
-	plane * p = (plane *)lpParam;
-	while(1)
-	{
-	 	Sleep(300);
-	}
-}
-
-void CALLBACK TimerProc(UINT uTimerID,UINT uMsg,DWORD_PTR dwUser,DWORD_PTR dw1,DWORD_PTR dw2)
-{
-	auto * p = (plane *)dwUser;
-	p->move_bullet();
-	p->Draw_bullet();
-	p->del_bullet();
-
-}
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	
-	plane * p = new plane();
-	AttackPlane * pa = new AttackPlane();
-
-	HWND cHwnd = GetConsoleWindow();
-	if(cHwnd==NULL) 
-		Manager::Error("can not find the window!");
-
-	Manager::CleanScreen();
-	Manager::change_window_size(cHwnd,(SYSTEM_WIDTH-CONSOLE_WIDTH)/2,(SYSTEM_HEIGHT-CONSOLE_HEIGHT)/2,290,400);//21*31
-	SetConsoleTitle(L"shoot plane!");
-	Manager::Zero_Background(background);
-
-	p->Init_Plane(background);
-	Manager::Draw_Background(background);
-
-	//Thread Move
-	HANDLE move_bullet = CreateThread(NULL,0,move,  p,0, NULL);
-
-	CloseHandle(move_bullet);
-	timeSetEvent(300,1,(LPTIMECALLBACK)TimerProc,(DWORD_PTR)p,TIME_PERIODIC);
-
-	while(game_loop)
-	{
-	
-		if(KEYDOWN(KEY_A))
-		{
-			p->move_plane(KEY_A);
-			p->Update_Plane();
-		}
-		else if(KEYDOWN(KEY_D))
-		{
-			p->move_plane(KEY_D);
-			p->Update_Plane();
-		}
-		else if(KEYDOWN(KEY_S))
-		{
-			p->move_plane(KEY_S);
-			p->Update_Plane();
-		}
-		else if(KEYDOWN(KEY_W))
-		{
-			p->move_plane(KEY_W);
-			p->Update_Plane();
-		}
-		else if(KEYDOWN(VK_SPACE))
-		{
-			p->shoot();
-		}
-
-		Sleep(50);
-		Manager::CleanScreen();
-		Manager::Draw_Background(background);
-		Manager::SetPosition(500,500);
-	}
-
-	system("pause");
+	Manager::Init_Game();
+	Manager::Game_Loop();
+	Manager::Game_Over();
+	system("STAR pause");
 	return 0;
 }
 
