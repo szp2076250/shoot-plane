@@ -64,28 +64,24 @@ class bullet
 public:
 	int x;
 	int y;
-
-	void Draw_bullet(int x ,int y,bool is_attacker=false)
+	void Draw_bullet(int x, int y, bool is_attacker = false)
 	{
-		if(!is_attacker)
+		if (!is_attacker)
 		{
-			if(x>=1)
+			if (x >= 1)
 			{
 				background[x][y] = '|';
 			}
 		}
 		else
 		{
-			//画敌机子弹
-			if(x<=20)
+			if (x <= 20)
 			{
 				background[x][y] = '.';
 			}
 		}
-
 	}
-
-	//子弹飞行（大汗==）
+	//move bullet
 	bool move(bool is_attacker = false)
 	{
 		if(!is_attacker)
@@ -104,7 +100,7 @@ public:
 		else
 		{
 			//attacker
-			if(x<=20)
+			if(x<=30)
 			{
 				background[x][y] = ' ';
 				x++;
@@ -115,30 +111,22 @@ public:
 				background[x][y] = ' ';
 			}
 		}
-
-
 		return false;
 	}
-
-	//子弹是否还需要存在啊
+	//delete
 	bool isdead()
 	{
 		if(y<=31 && y>=1)
 		{
 			return false;
 		}
-
 		background[x][y] = ' ';
-
 		return true;
 	}
-
 	void Remove()
 	{
 		background[x][y] = ' ';
 	}
-
-
 };
 
 class plane
@@ -185,7 +173,6 @@ public:
 					sign = 1;
 				}
 			break;
-
 			case KEY_D:
 				if(y+1<=31)
 				{
@@ -193,7 +180,6 @@ public:
 					sign = 1;
 				}
 			break;
-
 			case KEY_W:
 				if(x-1>=1)
 				{
@@ -201,7 +187,6 @@ public:
 					sign = 1;
 				}
 			break;
-
 			case KEY_S:
 				if(x+1<=21)
 				{
@@ -209,7 +194,6 @@ public:
 					sign = 1;
 				}
 			break;
-			
 		}
 
 		//检查是否越界
@@ -340,179 +324,111 @@ public:
 	{
 		this->DrawPlane(background,this->x,this->y);
 	}
-	
 
 };
 
-//Attack plane class
-class AttackPlane
+class Object
 {
-	//为了省事 都声明为public的
-	public:
-
-		int x;
-		int y; // position
-		
-		vector<AttackPlane> ap;
-		vector<bullet> vt;
-		//是否死亡
-		bool isdead;
-
-		//init
-		AttackPlane()
-		{
-			isdead = false;
-			x = 1;
-		}
-
-		//Create a plane
-		bool Create()
-		{
-			AttackPlane * p = new AttackPlane();
-			int sign = 0;
-			for(int i =0;i<30;i++)
-			{
-				//该位置为空 可以用
-				if(background[1][i]==' ')
-				{
-					p->y = i;
-					sign = 1;
-					break;
-				}
-			}
-			
-			if(!sign)
-			ap.push_back(*p);
-
-			free(p);
-
-			return sign;
-		}
-
-		//move
-		void ap_move()
-		{
-			if(x<=20)
-			{
-				x++;
-			}
-
-		}
-
-		//shoot
-		void shoot()
-		{
-			if(x==20)
-			{
-				return;
-			}
-
-			bullet * bt = new bullet();
-			bt->x = x+1;
-			bt->y = y;
-			this->vt.push_back(*bt);
-		}
-
-		//"collision"
-		//分为两个 一个是子弹的碰撞 一个是飞机的碰撞 
-		//分开写便与以后的子类的重写--虽然几率不是太大
-		//bullet collison
-		bool bullet_collision(int x,int y)
-		{
-			
-			//bullet collision
-			vector<bullet>::iterator it;
-			for(it=this->vt.begin();it!=vt.end();)
-			{
-				if((*it).x==x && (*it).y==y)
-				{
-					it = vt.erase(it);
-					//发生了碰撞游戏结束
-					return true;
-				}
-				else
-				{
-					it++;
-				}
-			}
-
-			return false;
-
-		}
-		//plane collision
-		bool plane_collision(int x,int y)
-		{
-			vector<AttackPlane>::iterator it;
-			
-			for(it=this->ap.begin();it!=ap.end();)
-			{
-				//距离小于等于1 
-				if(sqrt(float((abs((*it).x-x)*abs((*it).x-x)+abs((*it).y-y)*abs((*it).y-y))<=1)))
-				{
-					it = ap.erase(it);
-					//发生了碰撞游戏结束
-					return true;
-				}
-				else
-				{
-					it++;
-				}
-			}
-
-			return false;
-		}
-		//collision
-		bool collision(int x,int y)
-		{
-			if(bullet_collision(x,y)||plane_collision(x,y))
-			{
-				return true;
-			}
-			
-			return false;
-		}
-
-		//画飞机
-		virtual void DrawPlane()
-		{
-			if(y<0 || y>=31)
-				return;
-			 
-			if(!isdead)
-			{
-				//@-@
-				/*vector<AttackPlane>::iterator it;
-				if(!ap.empty())
-				for(it = ap.begin();it!=ap.end();)
-				{
-					background[(*it).x][(*it).y]   = '-';
-					background[(*it).x][(*it).y-1] = '@';
-					background[(*it).x][(*it).y+1] = '@';
-
-					it++;
-				}*/
-				background[x][y]   = '-';
-				background[x][y-1] = '@';
-				background[x][y+1] = '@';
-			}
-		}
-
-		~AttackPlane()
-		{
-			x=0;
-			y=0;
-		}
-		
-	
+private:
+public:
+	int m_x; int m_y;
+	virtual void init() = 0;
+	virtual void update() = 0;
+	virtual void draw(char(&buffer)[row][col]) = 0;
 };
+
+class AttackPlane : public Object
+{
+private:
+	bullet * m_pbullet;
+	bool dead;
+	bool bullet_dead;
+public:
+	bool getState() { return dead; }
+	bool CanGeneral(char(&buffer)[row][col], int x, int y)
+	{
+		auto kong = buffer[0][0];
+		if(buffer[x][y]!= kong || buffer[x][y+1] != kong || buffer[x][y-1] != kong)
+			return false;
+		m_x = x; m_y = y;
+		return true;
+	}
+	void init()
+	{
+		//-~-
+		dead = false;
+		bullet_dead = false;
+		m_pbullet = new bullet();
+		//find
+		for (auto i = 1; i < 30; i++)
+		{
+			if (CanGeneral(background, 2, i))
+			{
+				return;
+			}
+		}
+		//NO Attack plane can Construct 
+		//视为 dead
+		dead = true;
+	}
+	void update()
+	{
+		auto Clear = [&](char(&buffer)[row][col])
+		{
+			buffer[m_x][m_y] = ' ';
+			buffer[m_x][m_y+1] = ' ';
+			buffer[m_x][m_y-1] = ' ';
+		};
+		if (dead) return;
+
+		if (!bullet_dead && m_pbullet->isdead())
+		{
+			bullet_dead = true;
+			delete(m_pbullet);
+			m_pbullet = NULL;
+		}
+		if (!bullet_dead)
+		{
+			m_pbullet->move(true);
+		}
+
+		//clear old
+		//Clear(background);
+		//move plane
+		auto temp = m_x;
+		if (m_x> 30 || m_x< 0 || m_y<0 || m_y>20)
+		{
+			dead = true;
+			return;
+		}
+		m_x++;
+	}
+	void draw(char(&buffer)[row][col])
+	{
+		if (dead) return;
+		//draw plane
+		buffer[m_x][m_y] = '~';
+		buffer[m_x][m_y-1] = '-';
+		buffer[m_x][m_y+1] = '-';
+		//draw bullet
+		if(!bullet_dead)
+		m_pbullet->Draw_bullet(m_x+1,m_y,true);
+	}
+	AttackPlane() { init(); }
+	~AttackPlane() { delete m_pbullet; }
+};
+
+
 
 ////////////move
 DWORD WINAPI move(LPVOID lpParam)
 {
-	plane * p = (plane *)lpParam;
+	AttackPlane * ap = (AttackPlane *)lpParam;
 	while (1)
 	{
 		Sleep(300);
+		ap->draw(background);
+		ap->update();
 	}
 }
 
@@ -588,6 +504,9 @@ void SetPosition(int x,int y)
 
 void Init_Game()
 {
+	Zero_Background(background);
+	//test attack plane
+	AttackPlane * ap = new AttackPlane();
 	//MessageBoxA(NULL,"ASDW 控制方向 \n空格键开火!\nBug 巨多\n高能预警！","\'温馨\'提示=_=",MB_OK);
 	//Create a Actor
 	actor = new plane();
@@ -604,9 +523,11 @@ void Init_Game()
 
 	actor->Init_Plane(background);
 	//Thread Move
-	HANDLE move_bullet = CreateThread(NULL, 0, move, actor, 0, NULL);
+	HANDLE move_bullet = CreateThread(NULL, 0, move, ap, 0, NULL);
 	CloseHandle(move_bullet);
 	timeSetEvent(300, 1, (LPTIMECALLBACK)TimerProc, (DWORD_PTR)actor, TIME_PERIODIC);
+	
+
 }
 
 void Game_Loop()
@@ -658,7 +579,6 @@ void Game_Over()
 
 }
 };
-
 
 int _tmain(int argc, _TCHAR* argv[])
 {
