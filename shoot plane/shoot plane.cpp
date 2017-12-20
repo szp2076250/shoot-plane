@@ -37,6 +37,18 @@ char background[row][col];
 
 CRITICAL_SECTION cs;
 
+//Lock
+class CriticalLock
+{
+private:
+	CRITICAL_SECTION mLock;
+public:
+	void Lock() { EnterCriticalSection(&mLock); }
+	void Unlock() { LeaveCriticalSection(&mLock); }
+	CriticalLock() { InitializeCriticalSection(&mLock); }
+	~CriticalLock() { DeleteCriticalSection(&mLock); }
+};
+
 
 //检查是否越界
 bool is_overstep(int x,int y)
@@ -158,10 +170,6 @@ public:
 	//
 	bool move_plane(int director)
 	{
-
-		//函数内容
-		
-
 
 		//保留原始坐标
 		int old_x = x;
@@ -422,9 +430,6 @@ class AttackPlane
 				x++;
 			}
 
-			
-			
-		
 		}
 
 		//shoot
@@ -607,89 +612,59 @@ void Game_Over()
 
 }
 
-/*
----------------------------------------
-移动子弹
-不能在该函数中调用 c/c++ 库！否则有可能会导致内存泄漏
----------------------------------------
-*/
+////////////////////////////////////////////move
 DWORD WINAPI move(LPVOID lpParam)
 {
 	plane * p = (plane *)lpParam;
+
 	while(1)
 	{
 	 	Sleep(300);
-////////////////////////////////////////////////////
-		//EnterCriticalSection(&cs);//进入
-		//函数内容
-		
-		//p->move_bullet();
-		//p->del_bullet();
-		//LeaveCriticalSection(&cs);//离开     
-////////////////////////////////////////////////////
+
 	}
 }
 
-
-/*
-==================================================
-VOID CALLBACK TimerProc(          HWND hwnd,
-    UINT uMsg,
-    UINT_PTR idEvent,
-    DWORD dwTime
-);
-==================================================
-*/
-
-plane * p = new plane();
-AttackPlane * pa = new AttackPlane();
-void CALLBACK TimerProc(HWND hwnd,UINT uMsg,UINT_PTR idEvent,DWORD dwTime)
+void CALLBACK TimerProc(UINT uTimerID,UINT uMsg,DWORD_PTR dwUser,DWORD_PTR dw1,DWORD_PTR dw2)
 {
+	
+	auto * p = (plane *)LOWORD(dwUser);
+	int a;
+
+
+	/*
+
 	p->move_bullet();
 	p->del_bullet();
-
 
 	pa->Create();
 	if(pa->collision(p->x,p->y))
 	{
 		Game_Over();
 	}
-	pa->ap_move();
+	pa->ap_move();*/
 	
 
 }
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	//::Init_Game();
-/////////////////////////////////////////////初始化临界区
-	InitializeCriticalSection(&cs);//初始化
+
+	plane * p = new plane();
+	AttackPlane * pa = new AttackPlane();
+
+
 	HWND cHwnd = GetConsoleWindow();
 	if(cHwnd==NULL) 
 		Error("can not find the window!");
-	printf("console window: %d",cHwnd);
-	
+
 	change_window_size(cHwnd,(SYSTEM_WIDTH-CONSOLE_WIDTH)/2,(SYSTEM_HEIGHT-CONSOLE_HEIGHT)/2,1024,768);
 	system("cls");
-	/*char buffer[43][123];
-	for(int i=1;i<=43;i++)
-	{
-		for(int j=1;j<=123;j++)
-		putchar(' ');
 
-		
-	}*/
 	change_window_size(cHwnd,(SYSTEM_WIDTH-CONSOLE_WIDTH)/2,(SYSTEM_HEIGHT-CONSOLE_HEIGHT)/2,290,400);//21*31
 	SetConsoleTitle(L"shoot plane!");
-	
-
-
 	Zero_Background(background);
 
-	
-	
 	p->Init_Plane(background);
-
 	Draw_Background(background);
 
 	//创建线程
@@ -704,14 +679,13 @@ int _tmain(int argc, _TCHAR* argv[])
 	CloseHandle(move_bullet);
 
 
-	//SetTimer(NULL,1,1000,TimerProc);
-	timeSetEvent(300,1,(LPTIMECALLBACK)TimerProc,0,TIME_PERIODIC);
-	
+	timeSetEvent(300,1,(LPTIMECALLBACK)TimerProc,MAKELPARAM(pa,p),TIME_PERIODIC);
+
+	//pa->DrawPlane();
+
 
 	while(game_loop)
 	{
-
-
 		//函数内容
 		if(KEYDOWN(KEY_A))
 		{
@@ -739,36 +713,15 @@ int _tmain(int argc, _TCHAR* argv[])
 		}
 			
 		
-////////////////////////////////////////////////////
-		EnterCriticalSection(&cs);//进入
-		pa->DrawPlane();
-		p->Draw_bullet();
-		LeaveCriticalSection(&cs);//离开     
-////////////////////////////////////////////////////
-		
 
-		
+
 		Sleep(50);
 		system("cls");
 		Draw_Background(background);
 		SetPosition(500,500);
 	}
 
-	DeleteCriticalSection(&cs);//删除
-	/*while(game_loop)
-	{
-		//clear window
-		system("cls");
-		printf("score: %d",score);
-		for(int x = 0;x<1024;x++)
-		{
-			for(int y = 0;y<768;y++)
-			{
-				printf(" );
-			}
-		}
 
-	}*/
 	system("pause");
 	return 0;
 }
