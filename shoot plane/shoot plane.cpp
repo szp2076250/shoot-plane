@@ -73,25 +73,32 @@ public:
 	// [out] nearest
 	double Calc_near_Lu(int x, int y,Object * pnearest)
 	{
-		//////////////////////////////////////////////////////////////////////////LOCK
-		mpObjectLock->Lock();
 		auto PingFang = [&](double x) {return x*x; };
+		Object * pob = NULL;
 		//无穷远
-		Object * pob;
 		double near_most = 999999999999;
+		//////////////////////////////////////////////////////////////////////////LOCK  关于m_vo的操作
+		mpObjectLock->Lock();
 		if (m_vo.size() == 0) return near_most;
 		for (auto it = m_vo.begin(); it != m_vo.end(); it++)
 		{
 			//no sqrt
-			auto juli = PingFang(abs((*it)->m_x - x)) + PingFang(abs((*it)->m_y - y));
-			if (juli < near_most)
+			auto distance = PingFang(abs((*it)->m_x - x)) + PingFang(abs((*it)->m_y - y));
+			if (distance < near_most)
 			{
-				near_most = juli;
+				near_most = distance;
 				pob = (*it);
 			}
 		}
+
+		//dead put here
+		if (near_most<=1)
+		{
+			pob->ObjectDead = true;
+		}
 		mpObjectLock->Unlock();
 		//////////////////////////////////////////////////////////////////////////UNLOCK
+		pnearest = pob;
 		return near_most;
 	}
 	void AddObject(Object * pObject)
@@ -100,7 +107,7 @@ public:
 		m_vo.push_back(pObject);
 		mpObjectLock->Unlock();
 	}
-	void RemoveObject(Object * pObject)
+	void RemoveObject()
 	{
 		mpObjectLock->Lock();
 			for (auto it = m_vo.begin(); it != m_vo.end(); it++)
@@ -110,13 +117,17 @@ public:
 	}
 	void DrawObject()
 	{
+		mpObjectLock->Lock();
 			for (auto it = m_vo.begin(); it != m_vo.end(); it++)
 				(*it)->draw(background);
+		mpObjectLock->Unlock();
 	}
 	void UpdateObject()
 	{
+		mpObjectLock->Lock();
 			for (auto it = m_vo.begin(); it != m_vo.end(); it++)
 				(*it)->update();
+		mpObjectLock->Unlock();
 	}
 	~ObjectManager() { SAFE_DELETE(mpObjectLock); }
 };
@@ -349,9 +360,10 @@ public:
 		{
 			if((*it).move());
 			Object * p=NULL;
-			if (ObjectManager::getInstance()->Calc_near_Lu((*it).x, (*it).y, p) <= 1)
+			auto distance = ObjectManager::getInstance()->Calc_near_Lu((*it).x, (*it).y, p);
+			if(p==NULL) continue;
+			if (distance <= 1)
 			{
-				if(p)
 				p->ObjectDead = true;
 			}
 		}
@@ -517,7 +529,13 @@ public:
 		m_pbullet->Draw_bullet(m_x+1,m_y,true);
 	}
 	AttackPlane() { init(); }
-	~AttackPlane() { delete m_pbullet; }
+	~AttackPlane() {
+		//clear
+		background[m_x][m_y] = ' ';
+		background[m_x][m_y + 1] = ' ';
+		background[m_x][m_y - 1] = ' ';
+		delete m_pbullet;
+	}
 };
 
 
@@ -532,6 +550,7 @@ DWORD WINAPI move(LPVOID lpParam)
 		Sleep(300);
 		Object * p = new AttackPlane();
 		ObjectManager::getInstance()->AddObject(p);
+		ObjectManager::getInstance()->RemoveObject();
 		ObjectManager::getInstance()->DrawObject();
 		ObjectManager::getInstance()->UpdateObject();
 	}
