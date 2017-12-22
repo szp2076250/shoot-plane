@@ -440,11 +440,6 @@ public:
 		y = rand()%30;
 		auto varis = rand() % 7;
 
-		/*if(buffer[x][y]!= 0 || buffer[x][y+1] != 0 || buffer[x][y-1] != 0)
-			return false;*/
-		/*if (ObjectManager::getInstance()->Calc_near_Lu(m_x, m_y) < 2.0)
-				return false;*/
-
 		switch (varis)
 		{
 		case 1:
@@ -666,8 +661,6 @@ void Draw_Background(char(&buffer)[row][col], HANDLE first_hwnd, HANDLE second_h
 	WriteConsoleOutputCharacterA(second_hwnd,buf, row*col,cd,&bytes);
 }
 
-
-
 //¹Ì¶¨
 void SetPosition(int x,int y)
 {
@@ -749,7 +742,6 @@ void Game_Over()
 	Zero_Background(background);
 	Error("Game Over£¡"); 
 	system("pause");
-
 }
 };
 
