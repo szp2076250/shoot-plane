@@ -408,8 +408,6 @@ public:
 
 };
 
-
-
 class AttackPlane : public Object
 {
 private:
@@ -533,13 +531,10 @@ public:
 		//clear
 		background[m_x][m_y] = ' ';
 		background[m_x][m_y + 1] = ' ';
-		background[m_x][m_y - 1] = ' ';
+		background[m_x][m_y - 1] = ' '; 
 		delete m_pbullet;
 	}
 };
-
-
-
 
 ////////////move
 DWORD WINAPI move(LPVOID lpParam)
@@ -571,7 +566,34 @@ namespace Manager {
 	//condition
 	bool game_loop = false;
 
-void CleanScreen() { system("cls"); }
+
+bool cls() //Çå³ýÆÁÄ»
+{
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	COORD coordScreen = { 0, 0 };    /* here's where we'll home the cursor */
+	DWORD cCharsWritten;
+	CONSOLE_SCREEN_BUFFER_INFO csbi; /* to get buffer info */
+	DWORD dwConSize;                 /* number of character cells in the current buffer */
+
+	/* get the number of character cells in the current buffer */
+	if (!GetConsoleScreenBufferInfo(hConsole, &csbi))
+		return false;
+	dwConSize = csbi.dwSize.X * csbi.dwSize.Y;
+	/* fill the entire screen with blanks */
+	if (!FillConsoleOutputCharacter(hConsole, (TCHAR) ' ', dwConSize, coordScreen, &cCharsWritten))
+		return false;
+	/* get the current text attribute */
+	if (!GetConsoleScreenBufferInfo(hConsole, &csbi))
+		return false;
+	/* now set the buffer's attributes accordingly */
+	if (!FillConsoleOutputAttribute(hConsole, csbi.wAttributes, dwConSize, coordScreen, &cCharsWritten))
+		return false;
+	/* put the cursor at (0, 0) */
+	if (!SetConsoleCursorPosition(hConsole, coordScreen))
+		return false;
+}
+
+void CleanScreen() { system("cls"); /*Manager::cls();*/ }
 
 // play error message and end the gameloop
 void Error(const char * _str)
@@ -604,6 +626,8 @@ void Draw_Background(char (&buffer)[row][col])
 		}
 		printf("\n");
 	}
+
+	//WriteConsole(GetConsoleWindow(), buffer, row*col, NULL, NULL);
 }
 
 void Zero_Background(char (&buffer)[row][col])
@@ -638,9 +662,9 @@ void Init_Game()
 	if (cHwnd == NULL)
 		Error("can not find the window!");
 
-	Manager::CleanScreen();
 	Manager::change_window_size(cHwnd, (SYSTEM_WIDTH - CONSOLE_WIDTH) / 2, (SYSTEM_HEIGHT - CONSOLE_HEIGHT) / 2, 290, 400);//21*31
 	SetConsoleTitle(L"shoot plane!");
+	Manager::CleanScreen();
 	Manager::Zero_Background(background);
 	Manager::Draw_Background(background);
 
@@ -680,7 +704,7 @@ void Game_Loop()
 		{
 			actor->shoot();
 		}
-		Sleep(50);
+		//Sleep(300);
 		Manager::CleanScreen();
 		Manager::Draw_Background(background);
 		Manager::SetPosition(500, 500);
