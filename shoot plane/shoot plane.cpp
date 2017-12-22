@@ -3,7 +3,6 @@
 // name: shoot plane(da fei ji)
 
 #include "stdafx.h"
-
 ////////////////////////
 #include <stdio.h>
 #include <iostream>
@@ -12,9 +11,7 @@
 #include <windows.h>
 #include <vector>
 using namespace std;
-
 # pragma comment(lib,"winmm.lib")
-
 
 int  score     = 0;
 # define row 21  //行
@@ -49,7 +46,6 @@ public:
 	CriticalLock() { InitializeCriticalSection(&mLock); }
 	~CriticalLock() { DeleteCriticalSection(&mLock); }
 };
-
 
 class Object
 {
@@ -409,7 +405,6 @@ public:
 	{
 		this->DrawPlane(background,this->x,this->y);
 	}
-
 };
 
 class AttackPlane : public Object
@@ -567,182 +562,142 @@ namespace Manager {
 	//condition
 	bool game_loop = false;
 
-
-bool cls() //清除屏幕
-{
-	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-	COORD coordScreen = { 0, 0 };    /* here's where we'll home the cursor */
-	DWORD cCharsWritten;
-	CONSOLE_SCREEN_BUFFER_INFO csbi; /* to get buffer info */
-	DWORD dwConSize;                 /* number of character cells in the current buffer */
-
-	/* get the number of character cells in the current buffer */
-	if (!GetConsoleScreenBufferInfo(hConsole, &csbi))
-		return false;
-	dwConSize = csbi.dwSize.X * csbi.dwSize.Y;
-	/* fill the entire screen with blanks */
-	if (!FillConsoleOutputCharacter(hConsole, (TCHAR) ' ', dwConSize, coordScreen, &cCharsWritten))
-		return false;
-	/* get the current text attribute */
-	if (!GetConsoleScreenBufferInfo(hConsole, &csbi))
-		return false;
-	/* now set the buffer's attributes accordingly */
-	if (!FillConsoleOutputAttribute(hConsole, csbi.wAttributes, dwConSize, coordScreen, &cCharsWritten))
-		return false;
-	/* put the cursor at (0, 0) */
-	if (!SetConsoleCursorPosition(hConsole, coordScreen))
-		return false;
-}
-
-void Zero_Background(char(&buffer)[row][col])
-{
-	for (int i = 0; i < row; i++)
+	void Zero_Background(char(&buffer)[row][col])
 	{
-		for (int j = 0; j < col; j++)
+		for (int i = 0; i < row; i++)
 		{
-			buffer[row][col] = ' ';
-		}
-	}
-}
-
-void CleanScreen() { Zero_Background(background); ("cls"); /*Manager::cls();*/ }
-
-// play error message and end the gameloop
-void Error(const char * _str)
-{
-	game_loop = false;
-	system("cls");
-	system("COLOR 4e");
-	printf("---------------Error--------------\n");
-	char buf[50];
-	sprintf(buf,"%s\n",_str);
-	printf(buf);
-	printf("----------------------------------\n");
-	getchar();
-}
-
-// change size
-void change_window_size(HWND handle_console,int x,int y,int width,int height)
-{
-	MoveWindow(handle_console,x,y,width,height,true);
-}
-// draw background x replace row y replace col
-void Draw_Background(char(&buffer)[row][col], HANDLE first_hwnd, HANDLE second_hwnd)
-{
-	if (first_hwnd == NULL || second_hwnd == NULL) [] {Error("Buffer Error"); return; };
-	//SetConsoleActiveScreenBuffer(second_hwnd);
-	SetConsoleActiveScreenBuffer(first_hwnd);
-	PCONSOLE_SCREEN_BUFFER_INFO info1=NULL, info2=NULL;
-	GetConsoleScreenBufferInfo(first_hwnd, info1);
-	GetConsoleScreenBufferInfo(first_hwnd, info2);
-	CONSOLE_CURSOR_INFO cci;
-	cci.dwSize = 1;
-	cci.bVisible = FALSE;
-	SetConsoleCursorInfo(first_hwnd,&cci);
-	SetConsoleCursorInfo(second_hwnd, &cci);
-	char buf[row*col];
-	DWORD bytes = 0;
-	CleanScreen();
-	for (int i = 0; i < row; i++)
-	{
-		for (int j = 0; j < col; j++)
-		{
-			if(background[i][j]!=0)
-			{ 
-			COORD cd = {j,i};
-			SetConsoleCursorPosition(first_hwnd,cd);
-			cout << buffer[i][j];
+			for (int j = 0; j < col; j++)
+			{
+				buffer[row][col] = ' ';
 			}
 		}
-		cout << endl;
-	}
-	COORD cd = {0,0};
-	ReadConsoleOutputCharacterA(first_hwnd,buf, row*col,cd,&bytes);
-	WriteConsoleOutputCharacterA(second_hwnd,buf, row*col,cd,&bytes);
 }
 
-//固定
-void SetPosition(int x,int y)
-{
-	COORD pos = {x,y};	
-	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-	::SetConsoleCursorPosition(hOut,pos);
-}
+	void CleanScreen() { Zero_Background(background); ("cls"); /*Manager::cls();*/ }
 
-void Init_Game()
-{
-	Zero_Background(background);
-	//MessageBoxA(NULL,"ASDW 控制方向 \n空格键开火!\nBug 巨多\n高能预警！","\'温馨\'提示=_=",MB_OK);
-	//Create a Actor
-	actor = new plane();
-	game_loop = true;
-	HWND cHwnd = GetConsoleWindow();
-	if (cHwnd == NULL)
-		Error("can not find the window!");
-	SetConsoleTitle(L"shoot plane!");
-	
-
-	SMALL_RECT rc = {0,0,31,24};
-	SetConsoleWindowInfo(GetStdHandle(STD_OUTPUT_HANDLE), true, &rc);
-	COORD cd = { 0,0 };
-	SetConsoleScreenBufferSize(GetStdHandle(STD_OUTPUT_HANDLE), cd);
-
-	Manager::CleanScreen();
-	Manager::Zero_Background(background);
-	actor->Init_Plane(background);
-	//Thread Move
-	HANDLE move_bullet = CreateThread(NULL, 0, move, NULL, 0, NULL);
-	CloseHandle(move_bullet);
-	timeSetEvent(300, 1, (LPTIMECALLBACK)TimerProc, (DWORD_PTR)actor, TIME_PERIODIC);
-}
-
-void Game_Loop()
-{
-	auto secondBuf = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE,
-		FILE_SHARE_READ | FILE_SHARE_WRITE,
-		NULL,
-		CONSOLE_TEXTMODE_BUFFER,
-		NULL);
-
-	if (!actor) game_loop = false;
-	while (game_loop)
+	// play error message and end the gameloop
+	void Error(const char * _str)
 	{
-		if (KEYDOWN(KEY_A))
-		{
-			actor->move_plane(KEY_A);
-			actor->Update_Plane();
-		}
-		else if (KEYDOWN(KEY_D))
-		{
-			actor->move_plane(KEY_D);
-			actor->Update_Plane();
-		}
-		else if (KEYDOWN(KEY_S))
-		{
-			actor->move_plane(KEY_S);
-			actor->Update_Plane();
-		}
-		else if (KEYDOWN(KEY_W))
-		{
-			actor->move_plane(KEY_W);
-			actor->Update_Plane();
-		}
-		else if (KEYDOWN(VK_SPACE))
-		{
-			actor->shoot();
-		}
-		Manager::Draw_Background(background, GetStdHandle(STD_OUTPUT_HANDLE),secondBuf);
+		game_loop = false;
+		system("cls");
+		system("COLOR 4e");
+		printf("---------------Error--------------\n");
+		char buf[50];
+		sprintf_s(buf,"%s\n",_str);
+		printf(buf);
+		printf("----------------------------------\n");
+		getchar();
 	}
-}
 
-void Game_Over()
-{
-	KillTimer(NULL,1);
-	//清空
-	Zero_Background(background);
-	Error("Game Over！"); 
-	system("pause");
-}
+	// draw background x replace row y replace col
+	void Draw_Background(char(&buffer)[row][col], HANDLE first_hwnd, HANDLE second_hwnd)
+	{
+		if (first_hwnd == NULL || second_hwnd == NULL) [] {Error("Buffer Error"); return; };
+		//SetConsoleActiveScreenBuffer(second_hwnd);
+		SetConsoleActiveScreenBuffer(first_hwnd);
+		PCONSOLE_SCREEN_BUFFER_INFO info1=NULL, info2=NULL;
+		GetConsoleScreenBufferInfo(first_hwnd, info1);
+		GetConsoleScreenBufferInfo(first_hwnd, info2);
+		CONSOLE_CURSOR_INFO cci;
+		cci.dwSize = 1;
+		cci.bVisible = FALSE;
+		SetConsoleCursorInfo(first_hwnd,&cci);
+		SetConsoleCursorInfo(second_hwnd, &cci);
+		char buf[row*col];
+		DWORD bytes = 0;
+		CleanScreen();
+		for (int i = 0; i < row; i++)
+		{
+			for (int j = 0; j < col; j++)
+			{
+				if(background[i][j]!=0)
+				{ 
+				COORD cd = {j,i};
+				SetConsoleCursorPosition(first_hwnd,cd);
+				cout << buffer[i][j];
+				}
+			}
+			cout << endl;
+		}
+		COORD cd = {0,0};
+		ReadConsoleOutputCharacterA(first_hwnd,buf, row*col,cd,&bytes);
+		WriteConsoleOutputCharacterA(second_hwnd,buf, row*col,cd,&bytes);
+	}
+
+	void Init_Game()
+	{
+		//MessageBoxA(NULL,"ASDW 控制方向 \n空格键开火!\nBug 巨多\n高能预警！","\'温馨\'提示=_=",MB_OK);
+		//Create a Actor
+		actor = new plane();
+		game_loop = true;
+		HWND cHwnd = GetConsoleWindow();
+		if (cHwnd == NULL)
+			Error("can not find the window!");
+		SetConsoleTitle(L"shoot plane!");
+
+
+		SMALL_RECT rc = {0,0,31,24};
+		SetConsoleWindowInfo(GetStdHandle(STD_OUTPUT_HANDLE), true, &rc);
+		COORD cd = { 0,0 };
+		SetConsoleScreenBufferSize(GetStdHandle(STD_OUTPUT_HANDLE), cd);
+
+		Manager::CleanScreen();
+		Manager::Zero_Background(background);
+
+		actor->Init_Plane(background);
+		//Thread Move
+		HANDLE move_bullet = CreateThread(NULL, 0, move, NULL, 0, NULL);
+		CloseHandle(move_bullet);
+		timeSetEvent(300, 1, (LPTIMECALLBACK)TimerProc, (DWORD_PTR)actor, TIME_PERIODIC);
+	}
+
+	void Game_Loop()
+	{
+		auto secondBuf = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE,
+			FILE_SHARE_READ | FILE_SHARE_WRITE,
+			NULL,
+			CONSOLE_TEXTMODE_BUFFER,
+			NULL);
+
+		if (!actor) game_loop = false;
+		while (game_loop)
+		{
+			if (KEYDOWN(KEY_A))
+			{
+				actor->move_plane(KEY_A);
+				actor->Update_Plane();
+			}
+			else if (KEYDOWN(KEY_D))
+			{
+				actor->move_plane(KEY_D);
+				actor->Update_Plane();
+			}
+			else if (KEYDOWN(KEY_S))
+			{
+				actor->move_plane(KEY_S);
+				actor->Update_Plane();
+			}
+			else if (KEYDOWN(KEY_W))
+			{
+				actor->move_plane(KEY_W);
+				actor->Update_Plane();
+			}
+			else if (KEYDOWN(VK_SPACE))
+			{
+				actor->shoot();
+			}
+			Manager::Draw_Background(background, GetStdHandle(STD_OUTPUT_HANDLE), secondBuf);
+		}
+	}
+
+	void Game_Over()
+	{
+		KillTimer(NULL,1);
+		//清空
+		Zero_Background(background);
+		Error("Game Over！"); 
+		system("pause");
+	}
 };
 
 int _tmain(int argc, _TCHAR* argv[])
