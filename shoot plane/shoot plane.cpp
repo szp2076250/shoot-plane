@@ -72,15 +72,16 @@ public:
 	static ObjectManager * pInstance;
 	static ObjectManager * getInstance();
 	// [out] nearest
-	double Calc_near_Lu(int x, int y,Object * pnearest)
+	double Calc_near_Lu(int x, int y,Object * pnearest,bool & state)
 	{
+		auto tempState = false;
 		auto PingFang = [&](double x) {return x*x; };
 		Object * pob = NULL;
 		//无穷远
 		double near_most = 999999999999;
 		//////////////////////////////////////////////////////////////////////////LOCK  关于m_vo的操作
 		mpObjectLock->Lock();
-		if (m_vo.size() == 0) return near_most;
+		if (m_vo.size() == 0)[&] {tempState = false; return near_most; };
 		for (auto it = m_vo.begin(); it != m_vo.end(); it++)
 		{
 			//no sqrt
@@ -91,15 +92,16 @@ public:
 				pob = (*it);
 			}
 		}
-
 		//dead put here
 		if (near_most<=1)
 		{
+			tempState = true;
 			pob->ObjectDead = true;
 		}
 		mpObjectLock->Unlock();
 		//////////////////////////////////////////////////////////////////////////UNLOCK
 		pnearest = pob;
+		state = tempState;
 		return near_most;
 	}
 	void AddObject(Object * pObject)
@@ -365,9 +367,10 @@ public:
 		{
 			if((*it).move());
 			Object * p=NULL;
-			auto distance = ObjectManager::getInstance()->Calc_near_Lu((*it).x, (*it).y, p);
+			bool state;
+			auto distance = ObjectManager::getInstance()->Calc_near_Lu((*it).x, (*it).y, p, state);
+			(*it).SetState(state);
 		}
-
 	}
 
 	void Del_Plane(char (&buffer)[row][col])
