@@ -6,6 +6,7 @@
 
 ////////////////////////
 #include <stdio.h>
+#include <iostream>
 ///////////////////////
 #include <cmath>
 #include <windows.h>
@@ -621,18 +622,34 @@ void change_window_size(HWND handle_console,int x,int y,int width,int height)
 }
 
 // draw background x replace row y replace col
-void Draw_Background(char (&buffer)[row][col])
+void Draw_Background(char(&buffer)[row][col], HANDLE first_hwnd, HANDLE second_hwnd)
 {
-	for(int i=0;i<row;i++)
+	if (first_hwnd == NULL || second_hwnd == NULL) [] {Error("Buffer Error"); return; };
+	//SetConsoleActiveScreenBuffer(second_hwnd);
+	SetConsoleActiveScreenBuffer(first_hwnd);
+	PCONSOLE_SCREEN_BUFFER_INFO info1=NULL, info2=NULL;
+	GetConsoleScreenBufferInfo(first_hwnd, info1);
+	GetConsoleScreenBufferInfo(first_hwnd, info2);
+	CONSOLE_CURSOR_INFO cci;
+	cci.dwSize = 1;
+	cci.bVisible = FALSE;
+	SetConsoleCursorInfo(first_hwnd,&cci);
+	SetConsoleCursorInfo(second_hwnd, &cci);
+	char buf[row*col];
+	DWORD bytes = 0;
+	system("cls");
+	for (int i = 0; i < row; i++)
 	{
-		for(int j=0;j<col;j++)
+		for (int j = 0; j < col; j++)
 		{
-			printf("%c",buffer[i][j]);
+			cout << buffer[i][j];
 		}
-		printf("\n");
+		cout << endl;
+		
 	}
-
-	//WriteConsole(GetConsoleWindow(), buffer, row*col, NULL, NULL);
+	COORD cd = {0,0};
+	ReadConsoleOutputCharacterA(first_hwnd,buf, row*col,cd,&bytes);
+	WriteConsoleOutputCharacterA(second_hwnd,buf, row*col,cd,&bytes);
 }
 
 void Zero_Background(char (&buffer)[row][col])
@@ -671,7 +688,7 @@ void Init_Game()
 	SetConsoleTitle(L"shoot plane!");
 	Manager::CleanScreen();
 	Manager::Zero_Background(background);
-	Manager::Draw_Background(background);
+	//Manager::Draw_Background(background,GetStdHandle(STD_OUTPUT_HANDLE));
 
 	actor->Init_Plane(background);
 	//Thread Move
@@ -682,6 +699,12 @@ void Init_Game()
 
 void Game_Loop()
 {
+	auto secondBuf = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE,
+		FILE_SHARE_READ | FILE_SHARE_WRITE,
+		NULL,
+		CONSOLE_TEXTMODE_BUFFER,
+		NULL);
+
 	if (!actor) game_loop = false;
 	while (game_loop)
 	{
@@ -709,10 +732,8 @@ void Game_Loop()
 		{
 			actor->shoot();
 		}
-		//Sleep(300);
-		Manager::CleanScreen();
-		Manager::Draw_Background(background);
-		Manager::SetPosition(500, 500);
+		Manager::Draw_Background(background, GetStdHandle(STD_OUTPUT_HANDLE),secondBuf);
+		//Manager::SetPosition(500, 500);
 	}
 }
 
