@@ -59,6 +59,7 @@ public:
 	virtual void init() {}
 	virtual void update() {}
 	virtual void draw(char(&buffer)[row][col]) {}
+	virtual ~Object() {}
 };
 
 class ObjectManager
@@ -112,7 +113,11 @@ public:
 		mpObjectLock->Lock();
 			for (auto it = m_vo.begin(); it != m_vo.end(); it++)
 				if ((*it)->ObjectDead)
+				{ 
+					delete *it;
 					it = m_vo.erase(it);
+				}
+					
 		mpObjectLock->Unlock();
 	}
 	void DrawObject()
@@ -361,11 +366,6 @@ public:
 			if((*it).move());
 			Object * p=NULL;
 			auto distance = ObjectManager::getInstance()->Calc_near_Lu((*it).x, (*it).y, p);
-			if(p==NULL) continue;
-			if (distance <= 1)
-			{
-				p->ObjectDead = true;
-			}
 		}
 
 	}
@@ -423,6 +423,13 @@ private:
 public:
 	bool getState() { return ObjectDead; }
 	void setState(bool state) { ObjectDead = state;}
+	void Remove(char(&buffer)[row][col], UINT x, UINT y)
+	{
+		if (x - 1 < 0) return;
+		buffer[x][y] = ' ';
+		buffer[x][y + 1] = ' ';
+		buffer[x][y - 1] = ' ';
+	}
 	bool CanGeneral(char(&buffer)[row][col], int x, int y)
 	{
 		srand(GetTickCount());
@@ -481,7 +488,11 @@ public:
 	void update()
 	{
 		bullet_dead = m_pbullet->GetState();
-		if (ObjectDead) return;
+		if (ObjectDead)
+		{
+			Remove(background,m_x-1,m_y);
+			return;
+		}
 		if (!bullet_dead && m_pbullet->GetState())
 		{
 			bullet_dead = true;
@@ -503,21 +514,14 @@ public:
 	}
 	void draw(char(&buffer)[row][col])
 	{
-		auto Clear = [&](char(&buffer)[row][col],UINT x,UINT y)
-		{
-			if (x - 1 < 0) return;
-			buffer[x][y] = ' ';
-			buffer[x][y + 1] = ' ';
-			buffer[x][y - 1] = ' ';
-		};
 		if (ObjectDead)
 		{
-			Clear(background, m_x - 1, m_y);
+			Remove(background, m_x-1, m_y);
 			return;
 		}
 
 		//clear old
-		Clear(background,m_x-1,m_y);
+		Remove(background,m_x-1,m_y);
 		//draw plane
 		buffer[m_x][m_y] = kind[1];
 		buffer[m_x][m_y-1] = kind[0];
@@ -529,9 +533,7 @@ public:
 	AttackPlane() { init(); }
 	~AttackPlane() {
 		//clear
-		background[m_x][m_y] = ' ';
-		background[m_x][m_y + 1] = ' ';
-		background[m_x][m_y - 1] = ' '; 
+		Remove(background, m_x - 1, m_y);
 		delete m_pbullet;
 	}
 };
