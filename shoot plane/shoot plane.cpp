@@ -33,8 +33,22 @@ char background[row][col];
 # define KEY_D 68
 # define KEY_S 83
 # define KEY_W 87
+# define SAFE_DELETE(p) if(p!=NULL) delete p;
 
 CRITICAL_SECTION cs;
+
+//Lock
+class CriticalLock
+{
+private:
+	CRITICAL_SECTION mLock;
+public:
+	void Lock() { EnterCriticalSection(&mLock); }
+	void Unlock() { LeaveCriticalSection(&mLock); }
+	CriticalLock() { InitializeCriticalSection(&mLock); }
+	~CriticalLock() { DeleteCriticalSection(&mLock); }
+};
+
 
 class Object
 {
@@ -51,37 +65,48 @@ class ObjectManager
 {
 private:
 	vector<Object *>  m_vo;
-	ObjectManager() {  }
+	CriticalLock * mpObjectLock;
+	ObjectManager() { mpObjectLock = new CriticalLock(); }
 public:
 	static ObjectManager * pInstance;
 	static ObjectManager * getInstance();
 	// [out] nearest
 	double Calc_near_Lu(int x, int y,Object * pnearest)
 	{
+		//////////////////////////////////////////////////////////////////////////LOCK
+		mpObjectLock->Lock();
+		auto PingFang = [&](double x) {return x*x; };
 		//无穷远
 		Object * pob;
 		double near_most = 999999999999;
 		if (m_vo.size() == 0) return near_most;
 		for (auto it = m_vo.begin(); it != m_vo.end(); it++)
 		{
-			auto juli = sqrt(pow(abs((*it)->m_x - x), 2) + pow(abs((*it)->m_y - y), 2));
+			//no sqrt
+			auto juli = PingFang(abs((*it)->m_x - x)) + PingFang(abs((*it)->m_y - y));
 			if (juli < near_most)
 			{
 				near_most = juli;
 				pob = (*it);
 			}
 		}
+		mpObjectLock->Unlock();
+		//////////////////////////////////////////////////////////////////////////UNLOCK
 		return near_most;
 	}
 	void AddObject(Object * pObject)
 	{
+		mpObjectLock->Lock();
 		m_vo.push_back(pObject);
+		mpObjectLock->Unlock();
 	}
 	void RemoveObject(Object * pObject)
 	{
+		mpObjectLock->Lock();
 			for (auto it = m_vo.begin(); it != m_vo.end(); it++)
 				if ((*it)->ObjectDead)
 					it = m_vo.erase(it);
+		mpObjectLock->Unlock();
 	}
 	void DrawObject()
 	{
@@ -93,7 +118,7 @@ public:
 			for (auto it = m_vo.begin(); it != m_vo.end(); it++)
 				(*it)->update();
 	}
-	~ObjectManager() {  }
+	~ObjectManager() { SAFE_DELETE(mpObjectLock); }
 };
 ObjectManager * ObjectManager::pInstance = NULL;
 
@@ -104,20 +129,6 @@ ObjectManager * ObjectManager::getInstance()
 	return pInstance;
 }
 
-
-
-
-//Lock
-class CriticalLock
-{
-private:
-	CRITICAL_SECTION mLock;
-public:
-	void Lock() { EnterCriticalSection(&mLock); }
-	void Unlock() { LeaveCriticalSection(&mLock); }
-	CriticalLock() { InitializeCriticalSection(&mLock); }
-	~CriticalLock() { DeleteCriticalSection(&mLock); }
-};
 
 //是否越界
 bool is_overstep(int x,int y)
@@ -340,6 +351,7 @@ public:
 			Object * p=NULL;
 			if (ObjectManager::getInstance()->Calc_near_Lu((*it).x, (*it).y, p) <= 1)
 			{
+				if(p)
 				p->ObjectDead = true;
 			}
 		}
@@ -518,9 +530,6 @@ DWORD WINAPI move(LPVOID lpParam)
 	while (1)
 	{
 		Sleep(300);
-		ap->draw(background);
-		ap->update();
-
 		Object * p = new AttackPlane();
 		ObjectManager::getInstance()->AddObject(p);
 		ObjectManager::getInstance()->DrawObject();
@@ -659,13 +668,12 @@ void Game_Loop()
 	}
 }
 
-//游戏结束
 void Game_Over()
 {
 	KillTimer(NULL,1);
 	//清空
 	Zero_Background(background);
-	Error("游戏结束！");
+	Error("Game Over！"); 
 	system("pause");
 
 }
