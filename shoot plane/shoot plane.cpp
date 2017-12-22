@@ -599,7 +599,18 @@ bool cls() //清除屏幕
 		return false;
 }
 
-void CleanScreen() { system("cls"); /*Manager::cls();*/ }
+void Zero_Background(char(&buffer)[row][col])
+{
+	for (int i = 0; i < row; i++)
+	{
+		for (int j = 0; j < col; j++)
+		{
+			buffer[row][col] = ' ';
+		}
+	}
+}
+
+void CleanScreen() { Zero_Background(background); ("cls"); /*Manager::cls();*/ }
 
 // play error message and end the gameloop
 void Error(const char * _str)
@@ -620,7 +631,6 @@ void change_window_size(HWND handle_console,int x,int y,int width,int height)
 {
 	MoveWindow(handle_console,x,y,width,height,true);
 }
-
 // draw background x replace row y replace col
 void Draw_Background(char(&buffer)[row][col], HANDLE first_hwnd, HANDLE second_hwnd)
 {
@@ -637,31 +647,26 @@ void Draw_Background(char(&buffer)[row][col], HANDLE first_hwnd, HANDLE second_h
 	SetConsoleCursorInfo(second_hwnd, &cci);
 	char buf[row*col];
 	DWORD bytes = 0;
-	system("cls");
+	CleanScreen();
 	for (int i = 0; i < row; i++)
 	{
 		for (int j = 0; j < col; j++)
 		{
+			if(background[i][j]!=0)
+			{ 
+			COORD cd = {j,i};
+			SetConsoleCursorPosition(first_hwnd,cd);
 			cout << buffer[i][j];
+			}
 		}
 		cout << endl;
-		
 	}
 	COORD cd = {0,0};
 	ReadConsoleOutputCharacterA(first_hwnd,buf, row*col,cd,&bytes);
 	WriteConsoleOutputCharacterA(second_hwnd,buf, row*col,cd,&bytes);
 }
 
-void Zero_Background(char (&buffer)[row][col])
-{
-	for(int i = 0;i<row;i++)
-	{
-		for(int j = 0;j<col;j++)
-		{
-			buffer[row][col] = ' ';
-		}
-	}
-}
+
 
 //固定
 void SetPosition(int x,int y)
@@ -674,8 +679,6 @@ void SetPosition(int x,int y)
 void Init_Game()
 {
 	Zero_Background(background);
-	//test attack plane
-	AttackPlane * ap = new AttackPlane();
 	//MessageBoxA(NULL,"ASDW 控制方向 \n空格键开火!\nBug 巨多\n高能预警！","\'温馨\'提示=_=",MB_OK);
 	//Create a Actor
 	actor = new plane();
@@ -683,16 +686,19 @@ void Init_Game()
 	HWND cHwnd = GetConsoleWindow();
 	if (cHwnd == NULL)
 		Error("can not find the window!");
-
-	Manager::change_window_size(cHwnd, (SYSTEM_WIDTH - CONSOLE_WIDTH) / 2, (SYSTEM_HEIGHT - CONSOLE_HEIGHT) / 2, 290, 400);//21*31
 	SetConsoleTitle(L"shoot plane!");
+	
+
+	SMALL_RECT rc = {0,0,31,24};
+	SetConsoleWindowInfo(GetStdHandle(STD_OUTPUT_HANDLE), true, &rc);
+	COORD cd = { 0,0 };
+	SetConsoleScreenBufferSize(GetStdHandle(STD_OUTPUT_HANDLE), cd);
+
 	Manager::CleanScreen();
 	Manager::Zero_Background(background);
-	//Manager::Draw_Background(background,GetStdHandle(STD_OUTPUT_HANDLE));
-
 	actor->Init_Plane(background);
 	//Thread Move
-	HANDLE move_bullet = CreateThread(NULL, 0, move, ap, 0, NULL);
+	HANDLE move_bullet = CreateThread(NULL, 0, move, NULL, 0, NULL);
 	CloseHandle(move_bullet);
 	timeSetEvent(300, 1, (LPTIMECALLBACK)TimerProc, (DWORD_PTR)actor, TIME_PERIODIC);
 }
@@ -733,7 +739,6 @@ void Game_Loop()
 			actor->shoot();
 		}
 		Manager::Draw_Background(background, GetStdHandle(STD_OUTPUT_HANDLE),secondBuf);
-		//Manager::SetPosition(500, 500);
 	}
 }
 
