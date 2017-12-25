@@ -349,14 +349,7 @@ public:
 		}
 	}
 
-	void Del_Plane(char (&buffer)[row][col])
-	{
-		buffer[m_x][m_y]   = ' ';
-		buffer[m_x][m_y-1] = ' ';
-		buffer[m_x][m_y+1] = ' ';
-	}
-
-	//version:2 not safe!
+	//clear
 	void Del_Plane(char (&buffer)[row][col],int a,int b)
 	{
 		buffer[a][b]   = ' ';
@@ -367,12 +360,11 @@ public:
 	//Draw Plane
 	void draw(char  (&buffer)[row][col])
 	{
-		Del_Plane(buffer);
+		//Del_Plane(buffer);
 		buffer[m_x][m_y]   = '-';
 		buffer[m_x][m_y-1] = '*';
 		buffer[m_x][m_y+1] = '*';
 	}
-
 
 };
 
