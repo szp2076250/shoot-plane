@@ -372,13 +372,7 @@ public:
 		buffer[m_x][m_y-1] = '*';
 		buffer[m_x][m_y+1] = '*';
 	}
-	//init
-	void Init_Plane(char (&buffer)[row][col])
-	{
-		buffer[m_x][m_y]   = '-';
-		buffer[m_x][m_y-1] = '*';
-		buffer[m_x][m_y+1] = '*';
-	}
+
 
 };
 
@@ -619,7 +613,6 @@ namespace Manager {
 		Manager::CleanScreen();
 		Manager::Zero_Background(background);
 
-		actor->Init_Plane(background);
 		//Thread Move
 		HANDLE move_bullet = CreateThread(NULL, 0, move, NULL, 0, NULL);
 		CloseHandle(move_bullet);
