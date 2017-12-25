@@ -522,6 +522,36 @@ DWORD WINAPI move(LPVOID lpParam)
 	}
 }
 
+DWORD WINAPI draw(LPVOID lpParam)
+{
+	plane * actor = (plane *)lpParam;
+	while(1)
+	{ 
+		Sleep(100);
+		if (KEYDOWN(KEY_A))
+		{
+			actor->move_plane(KEY_A);
+		}
+		else if (KEYDOWN(KEY_D))
+		{
+			actor->move_plane(KEY_D);
+		}
+		else if (KEYDOWN(KEY_S))
+		{
+			actor->move_plane(KEY_S);
+		}
+		else if (KEYDOWN(KEY_W))
+		{
+			actor->move_plane(KEY_W);
+		}
+		else if (KEYDOWN(VK_SPACE))
+		{
+			actor->shoot();
+		}
+	}
+}
+
+
 void CALLBACK TimerProc(UINT uTimerID, UINT uMsg, DWORD_PTR dwUser, DWORD_PTR dw1, DWORD_PTR dw2)
 {
 	auto * p = (plane *)dwUser;
@@ -633,29 +663,12 @@ namespace Manager {
 			CONSOLE_TEXTMODE_BUFFER,
 			NULL);
 
+		auto drawThread = CreateThread(NULL, 0,draw,actor, 0, NULL);
+		CloseHandle(drawThread);
+
 		if (!actor) game_loop = false;
 		while (game_loop)
 		{
-			if (KEYDOWN(KEY_A))
-			{
-				actor->move_plane(KEY_A);
-			}
-			else if (KEYDOWN(KEY_D))
-			{
-				actor->move_plane(KEY_D);
-			}
-			else if (KEYDOWN(KEY_S))
-			{
-				actor->move_plane(KEY_S);
-			}
-			else if (KEYDOWN(KEY_W))
-			{
-				actor->move_plane(KEY_W);
-			}
-			else if (KEYDOWN(VK_SPACE))
-			{
-				actor->shoot();
-			}
 			actor->draw(background);
 			Manager::Draw_Background(background, GetStdHandle(STD_OUTPUT_HANDLE), secondBuf);
 		}
