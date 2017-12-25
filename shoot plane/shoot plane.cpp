@@ -225,15 +225,12 @@ public:
 	}
 };
 
-class plane
+class plane:public Object
 {
 public:
 	//position 中心坐标 +=+ 那个=号的坐标
-	int x;
-	int y;
 	bullet * p_bt;
 	int bullet_count;
-	bool isdead;
 
 	//LOCK
 	CriticalLock * m_plock;
@@ -241,59 +238,42 @@ public:
 	vector<bullet> v_bt;
 	plane(int x=20,int y=15)
 	{
-		this->x = x;
-		this->y = y;
+		m_x = x;
+		m_y = y;
 		bullet_count = 0;
 		p_bt = NULL;
-		isdead = false;
+		ObjectDead = false;
 		//new Lock
 		m_plock = new CriticalLock();
 	}
-	~plane() { x = y = 0; if (!p_bt)free(p_bt); }
-	bool move_plane(int director)
+	~plane() { m_x = m_y = 0; if (!p_bt)free(p_bt); }
+	void move_plane(int director)
 	{
 		//保留原始坐标
-		int old_x = x;
-		int old_y = y;
-		int sign = 0;
+		int old_x = m_x;
+		int old_y = m_y;
 		switch(director)
 		{
 			case KEY_A:
-				if(y-1>=1)
-				{
-					y--;
-					sign = 1;
-				}
+				if(m_y-1>=1)  m_y--;
 			break;
 			case KEY_D:
-				if(y+1<=31)
-				{
-					y++;
-					sign = 1;
-				}
+				if(m_y+1<=31) m_y++;
 			break;
 			case KEY_W:
-				if(x-1>=1)
-				{
-					x--;
-					sign = 1;
-				}
+				if(m_x-1>=1)  m_x--;
 			break;
 			case KEY_S:
-				if(x+1<=21)
-				{
-					x++;
-					sign = 1;
-				}
+				if(m_x+1<=21) m_x++;
 			break;
 		}
-		//检查是否越界
-		if(is_overstep(this->x,this->y))
+
+		if(is_overstep(m_x, m_y))
 		{
-			this->x = old_x;
-			this->y = old_y;
+			m_x = old_x;
+			m_y = old_y;
 			old_x = old_y = 0;
-			return false;
+			return ;
 		}
 		else
 		{
@@ -301,20 +281,20 @@ public:
 		 this->Del_Plane(background,old_x,old_y);
 		 old_x = old_y = 0;
 		}
-		return sign;
+		return ;
 	}
 
 	bool shoot(bool is_attacker=false)
 	{
 		if(!is_attacker)
 		{
-			if((this->y)-1<0)
+			if(m_y-1<0)
 				return false;
 			//creat a bullet
 			this->bullet_count++;
 			bullet * pbu = new bullet();
-			pbu->x = x-1;
-			pbu->y = y;
+			pbu->x = m_x -1;
+			pbu->y = m_y;
 			//insert into vector.
 /////////////////////////////////////////////
 			m_plock->Lock();
@@ -323,7 +303,6 @@ public:
 /////////////////////////////////////////////
 			free(pbu);
 		}
-
 		return true;
 	}
 
@@ -372,9 +351,9 @@ public:
 
 	void Del_Plane(char (&buffer)[row][col])
 	{
-		buffer[x][y]   = ' ';
-		buffer[x][y-1] = ' ';
-		buffer[x][y+1] = ' ';
+		buffer[m_x][m_y]   = ' ';
+		buffer[m_x][m_y-1] = ' ';
+		buffer[m_x][m_y+1] = ' ';
 	}
 
 	//version:2 not safe!
@@ -386,25 +365,21 @@ public:
 	}
 
 	//Draw Plane
-	void DrawPlane(char  (&buffer)[row][col],int x,int y)
+	void draw(char  (&buffer)[row][col])
 	{
 		Del_Plane(buffer);
-		buffer[x][y]   = '-';
-		buffer[x][y-1] = '*';
-		buffer[x][y+1] = '*';
+		buffer[m_x][m_y]   = '-';
+		buffer[m_x][m_y-1] = '*';
+		buffer[m_x][m_y+1] = '*';
 	}
 	//init
 	void Init_Plane(char (&buffer)[row][col])
 	{
-		buffer[x][y]   = '-';
-		buffer[x][y-1] = '*';
-		buffer[x][y+1] = '*';
+		buffer[m_x][m_y]   = '-';
+		buffer[m_x][m_y-1] = '*';
+		buffer[m_x][m_y+1] = '*';
 	}
-	//Update 
-	void Update_Plane()
-	{
-		this->DrawPlane(background,this->x,this->y);
-	}
+
 };
 
 class AttackPlane : public Object
@@ -665,27 +640,24 @@ namespace Manager {
 			if (KEYDOWN(KEY_A))
 			{
 				actor->move_plane(KEY_A);
-				actor->Update_Plane();
 			}
 			else if (KEYDOWN(KEY_D))
 			{
 				actor->move_plane(KEY_D);
-				actor->Update_Plane();
 			}
 			else if (KEYDOWN(KEY_S))
 			{
 				actor->move_plane(KEY_S);
-				actor->Update_Plane();
 			}
 			else if (KEYDOWN(KEY_W))
 			{
 				actor->move_plane(KEY_W);
-				actor->Update_Plane();
 			}
 			else if (KEYDOWN(VK_SPACE))
 			{
 				actor->shoot();
 			}
+			actor->draw(background);
 			Manager::Draw_Background(background, GetStdHandle(STD_OUTPUT_HANDLE), secondBuf);
 		}
 	}
