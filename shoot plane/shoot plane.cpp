@@ -24,6 +24,7 @@ char background[row][col];
 # define CONSOLE_WIDTH  1024
 # define CONSOLE_HEIGHT 768
 
+
 # define KEYDOWN(vk_key) ((GetAsyncKeyState(vk_key)&0x8000)?1:0)
 # define KEYUP(vk_key)   ((GetAsyncKeyState(vk_key)&0x8000)?0:1)
 
@@ -33,7 +34,16 @@ char background[row][col];
 # define KEY_W 87
 # define SAFE_DELETE(p) if(p!=NULL) delete p;
 
-CRITICAL_SECTION cs;
+//是否越界
+bool is_overstep(int x, int y)
+{
+	if (x > (row - 1) || x<0 || y>(col - 2) || y < 0)
+	{
+		return true;
+	}
+	return false;
+}
+
 
 //Lock
 class CriticalLock
@@ -53,7 +63,7 @@ private:
 public:
 	int m_x; int m_y;
 	bool ObjectDead;
-	virtual void init() {}
+	virtual void init() {} 
 	virtual void update() {}
 	virtual void draw(char(&buffer)[row][col]) {}
 	virtual ~Object() {}
@@ -144,31 +154,32 @@ ObjectManager * ObjectManager::getInstance()
 	return pInstance;
 }
 
-
-//是否越界
-bool is_overstep(int x,int y)
-{
-	if(x>(row-1) || x<0 || y>(col-2) || y<0)
-	{
-		return true;
-	}
-
-	return false;
-}
-//子弹
-class bullet
+class bullet_base :public Object
 {
 public:
-	int x;
-	int y;
-	bool dead;
-	void SetState(bool state) { dead = state; }
-	bool GetState(void) { return dead; }
+	char bullet_kind;
+	void SetState(bool state) { ObjectDead = state; }
+	bool GetState(void) { return ObjectDead; }
+	void Clear() { background[m_x][m_y] = ' '; }
+	virtual void draw() {};
+	virtual void init() { bullet_kind = '.'; };
+	virtual void update() {};
+	bullet_base() { ObjectDead = false; }
+	~bullet_base() { Clear(); }
+};
 
-	bullet() { dead = false; }
+//子弹
+class bullet : public Object
+{
+public:
+	void SetState(bool state) { ObjectDead = state; }
+	bool GetState(void) { return ObjectDead; }
+
+	bullet() { ObjectDead = false; }
+	~bullet() {}
 	void Draw_bullet(int x, int y, bool is_attacker = false)
 	{
-		if (dead) return;
+		if (ObjectDead) return;
 		if (!is_attacker)
 		{
 			if (x >= 1)
@@ -187,41 +198,42 @@ public:
 	//move bullet
 	bool move(bool is_attacker = false)
 	{
-		if (dead) return false;
+		if (ObjectDead) return false;
 		if(!is_attacker)
 		{
-			if(x>=1)
+			if(m_x>=1)
 			{
-				background[x][y] = ' ';
-				x--;
+				background[m_x][m_y] = ' ';
+				m_x--;
 				return true;
 			}
 			else
 			{
-				background[x][y] = ' ';
+				background[m_x][m_y] = ' ';
 			}
 		}
 		else
 		{
 			//attacker
-			if(x<=30)
+			if(m_x<=30)
 			{
-				background[x][y] = ' ';
-				x++;
+				background[m_x][m_y] = ' ';
+				m_x++;
 				return true;
 			}
 			else
 			{
-				background[x][y] = ' ';
+				background[m_x][m_y] = ' ';
 			}
 		}
-		if (y > 30) dead = true;
+
+		if(is_overstep(m_x, m_y)) ObjectDead = true;
 		return false;
 	}
 
 	void Remove()
 	{
-		background[x][y] = ' ';
+		background[m_x][m_y] = ' ';
 	}
 };
 
@@ -293,8 +305,8 @@ public:
 			//creat a bullet
 			this->bullet_count++;
 			bullet * pbu = new bullet();
-			pbu->x = m_x -1;
-			pbu->y = m_y;
+			pbu->m_x = m_x -1;
+			pbu->m_y = m_y;
 			//insert into vector.
 /////////////////////////////////////////////
 			m_plock->Lock();
@@ -311,7 +323,7 @@ public:
 	{
 		for(auto it=v_bt.begin();it!=v_bt.end();it++)
 		{
-			(*it).Draw_bullet((*it).x,(*it).y);
+			(*it).Draw_bullet((*it).m_x,(*it).m_y);
 		}
 	}
 
@@ -322,7 +334,7 @@ public:
 		m_plock->Lock();
 		for(auto it=v_bt.begin();it!=v_bt.end();)
 		{
-			if((*it).x == 0||(*it).GetState())
+			if((*it).m_x == 0||(*it).GetState())
 			{
 				(*it).Remove();
 				it = v_bt.erase(it);
@@ -344,7 +356,7 @@ public:
 			if((*it).move());
 			Object * p=NULL;
 			bool state;
-			auto distance = ObjectManager::getInstance()->Calc_near_Lu((*it).x, (*it).y, p, state);
+			auto distance = ObjectManager::getInstance()->Calc_near_Lu((*it).m_x, (*it).m_y, p, state);
 			(*it).SetState(state);
 		}
 	}
@@ -360,6 +372,8 @@ public:
 	//Draw Plane
 	void draw(char  (&buffer)[row][col])
 	{
+		if (ObjectDead) return;
+
 		//Del_Plane(buffer);
 		buffer[m_x][m_y]   = '-';
 		buffer[m_x][m_y-1] = '*';
