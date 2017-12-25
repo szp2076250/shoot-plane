@@ -525,30 +525,7 @@ DWORD WINAPI move(LPVOID lpParam)
 DWORD WINAPI draw(LPVOID lpParam)
 {
 	plane * actor = (plane *)lpParam;
-	while(1)
-	{ 
-		Sleep(100);
-		if (KEYDOWN(KEY_A))
-		{
-			actor->move_plane(KEY_A);
-		}
-		else if (KEYDOWN(KEY_D))
-		{
-			actor->move_plane(KEY_D);
-		}
-		else if (KEYDOWN(KEY_S))
-		{
-			actor->move_plane(KEY_S);
-		}
-		else if (KEYDOWN(KEY_W))
-		{
-			actor->move_plane(KEY_W);
-		}
-		else if (KEYDOWN(VK_SPACE))
-		{
-			actor->shoot();
-		}
-	}
+	
 }
 
 
@@ -669,6 +646,29 @@ namespace Manager {
 		if (!actor) game_loop = false;
 		while (game_loop)
 		{
+			while (1)
+			{
+				if (KEYDOWN(KEY_A))
+				{
+					actor->move_plane(KEY_A);
+				}
+				else if (KEYDOWN(KEY_D))
+				{
+					actor->move_plane(KEY_D);
+				}
+				else if (KEYDOWN(KEY_S))
+				{
+					actor->move_plane(KEY_S);
+				}
+				else if (KEYDOWN(KEY_W))
+				{
+					actor->move_plane(KEY_W);
+				}
+				else if (KEYDOWN(VK_SPACE))
+				{
+					actor->shoot();
+				}
+			}
 			actor->draw(background);
 			Manager::Draw_Background(background, GetStdHandle(STD_OUTPUT_HANDLE), secondBuf);
 		}
