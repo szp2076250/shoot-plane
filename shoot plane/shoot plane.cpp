@@ -100,7 +100,7 @@ public:
 			}
 		}
 		//dead put here
-		if (near_most<=1)
+		if (near_most<=2)
 		{
 			tempState = true;
 			pob->ObjectDead = true;
@@ -184,7 +184,7 @@ public:
 		{
 			if (x >= 1)
 			{
-				background[x][y] = '|';
+				background[x][y] = '*';
 			}
 		}
 		else
@@ -617,7 +617,6 @@ namespace Manager {
 			Error("can not find the window!");
 		SetConsoleTitle(L"shoot plane!");
 
-
 		SMALL_RECT rc = {0,0,31,24};
 		SetConsoleWindowInfo(GetStdHandle(STD_OUTPUT_HANDLE), true, &rc);
 		COORD cd = { 0,0 };
@@ -625,6 +624,12 @@ namespace Manager {
 
 		Manager::CleanScreen();
 		Manager::Zero_Background(background);
+
+		//Ä£Äâµã»÷shift£¿
+		auto handle = (HWND)GetStdHandle(STD_OUTPUT_HANDLE);
+		SendMessage(handle, WM_KEYDOWN, VK_SHIFT, NULL);
+		Sleep(200);
+		SendMessage(handle, WM_KEYUP, VK_SHIFT, NULL);
 
 		//Thread Move
 		HANDLE move_bullet = CreateThread(NULL, 0, move, NULL, 0, NULL);
