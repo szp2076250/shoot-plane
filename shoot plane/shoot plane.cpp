@@ -79,10 +79,10 @@ public:
 	static ObjectManager * pInstance;
 	static ObjectManager * getInstance();
 	// [out] nearest
-	double Calc_near_Lu(int x, int y,Object * pnearest,bool & state)
+	double Calc_near_Lu(int x, int y,Object * pnearest,bool & state,double cmp_juli=2.0000)
 	{
 		auto tempState = false;
-		auto PingFang = [&](double x) {return x*x; };
+		auto PingFang = [&](double x)->double {return x*x; };
 		Object * pob = NULL;
 		//ÎÞÇîÔ¶
 		double near_most = 999999999999;
@@ -100,7 +100,7 @@ public:
 			}
 		}
 		//dead put here
-		if (near_most<=2)
+		if (near_most<= cmp_juli)
 		{
 			tempState = true;
 			pob->ObjectDead = true;
@@ -373,7 +373,6 @@ public:
 	void draw(char  (&buffer)[row][col])
 	{
 		if (ObjectDead) return;
-
 		//Del_Plane(buffer);
 		buffer[m_x][m_y]   = '-';
 		buffer[m_x][m_y-1] = '*';
@@ -525,6 +524,33 @@ DWORD WINAPI move(LPVOID lpParam)
 DWORD WINAPI draw(LPVOID lpParam)
 {
 	plane * actor = (plane *)lpParam;
+	while(1)
+	{
+		if (KEYDOWN(KEY_A))
+		{
+			actor->move_plane(KEY_A);
+		}
+		else if (KEYDOWN(KEY_D))
+		{
+			actor->move_plane(KEY_D);
+		}
+		else if (KEYDOWN(KEY_S))
+		{
+			actor->move_plane(KEY_S);
+		}
+		else if (KEYDOWN(KEY_W))
+		{
+			actor->move_plane(KEY_W);
+		}
+		else if (KEYDOWN(VK_SPACE))
+		{
+			actor->shoot();
+		}
+
+		actor->draw(background);
+		Sleep(30);
+	}
+	
 	return 0;
 }
 
@@ -568,7 +594,6 @@ namespace Manager {
 		sprintf_s(buf,"%s\n",_str);
 		printf(buf);
 		printf("----------------------------------\n");
-		getchar();
 	}
 
 	// draw background x replace row y replace col
@@ -649,33 +674,12 @@ namespace Manager {
 		CloseHandle(drawThread);
 
 		if (!actor) game_loop = false;
+		bool isGameOver = false;
 		while (game_loop)
 		{
-			
-				if (KEYDOWN(KEY_A))
-				{
-					actor->move_plane(KEY_A);
-				}
-				else if (KEYDOWN(KEY_D))
-				{
-					actor->move_plane(KEY_D);
-				}
-				else if (KEYDOWN(KEY_S))
-				{
-					actor->move_plane(KEY_S);
-				}
-				else if (KEYDOWN(KEY_W))
-				{
-					actor->move_plane(KEY_W);
-				}
-				else if (KEYDOWN(VK_SPACE))
-				{
-					actor->shoot();
-				}
-
-				actor->draw(background);
-				Manager::Draw_Background(background, GetStdHandle(STD_OUTPUT_HANDLE), secondBuf);
-		
+			Manager::Draw_Background(background, GetStdHandle(STD_OUTPUT_HANDLE), secondBuf);
+			ObjectManager::getInstance()->Calc_near_Lu(actor->m_x,actor->m_y,NULL, isGameOver,1);
+			if (isGameOver) game_loop = false;
 		}
 	}
 
@@ -685,7 +689,7 @@ namespace Manager {
 		//Çå¿Õ
 		Zero_Background(background);
 		Error("Game Over£¡"); 
-		system("pause");
+		Sleep(1500);
 	}
 };
 
@@ -694,7 +698,6 @@ int _tmain(int argc, _TCHAR* argv[])
 	Manager::Init_Game();
 	Manager::Game_Loop();
 	Manager::Game_Over();
-	system("STAR pause");
 	return 0;
 }
 
