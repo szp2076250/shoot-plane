@@ -525,7 +525,7 @@ DWORD WINAPI move(LPVOID lpParam)
 DWORD WINAPI draw(LPVOID lpParam)
 {
 	plane * actor = (plane *)lpParam;
-	
+	return 0;
 }
 
 
@@ -578,8 +578,8 @@ namespace Manager {
 		//SetConsoleActiveScreenBuffer(second_hwnd);
 		SetConsoleActiveScreenBuffer(first_hwnd);
 		PCONSOLE_SCREEN_BUFFER_INFO info1=NULL, info2=NULL;
-		GetConsoleScreenBufferInfo(first_hwnd, info1);
-		GetConsoleScreenBufferInfo(first_hwnd, info2);
+		//GetConsoleScreenBufferInfo(first_hwnd, info1);
+		//GetConsoleScreenBufferInfo(first_hwnd, info2);
 		CONSOLE_CURSOR_INFO cci;
 		cci.dwSize = 1;
 		cci.bVisible = FALSE;
@@ -646,8 +646,7 @@ namespace Manager {
 		if (!actor) game_loop = false;
 		while (game_loop)
 		{
-			while (1)
-			{
+			
 				if (KEYDOWN(KEY_A))
 				{
 					actor->move_plane(KEY_A);
@@ -668,9 +667,10 @@ namespace Manager {
 				{
 					actor->shoot();
 				}
-			}
-			actor->draw(background);
-			Manager::Draw_Background(background, GetStdHandle(STD_OUTPUT_HANDLE), secondBuf);
+
+				actor->draw(background);
+				Manager::Draw_Background(background, GetStdHandle(STD_OUTPUT_HANDLE), secondBuf);
+		
 		}
 	}
 
